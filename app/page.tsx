@@ -1,10 +1,28 @@
+import { Button, Card, CardBody, CardHeader } from '@nextui-org/react';
+
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-4xl font-bold text-blue-600 mb-4">Home page</h1>
-        <p className="text-gray-600">Tailwind CSS is working!</p>
-      </div>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <Card className="max-w-md">
+        <CardHeader className="flex gap-3">
+          <div className="flex flex-col">
+            <p className="text-md">NextUI + Tailwind CSS v3</p>
+            <p className="text-small text-default-500">Working!</p>
+          </div>
+        </CardHeader>
+        <CardBody>
+          <h1 className="text-2xl font-bold mb-4">Welcome to NextJS Audio Form Stock</h1>
+          <p className="text-gray-600 mb-4">
+            NextUI components are working perfectly with Tailwind CSS v3!
+          </p>
+          <div className="flex gap-2">
+            <Button color="primary">Get Started</Button>
+            <Button color="secondary" variant="bordered">
+              Learn More
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
     </div>
   );
 }
