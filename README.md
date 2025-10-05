@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NextJS Project Template
 
-## Getting Started
+A modern, production-ready NextJS template with NextUI components and Tailwind CSS v3.
 
-First, run the development server:
+## 🚀 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Next.js 15.5.4** - Latest stable version
+- **NextUI v2.6.11** - Beautiful React components
+- **Tailwind CSS v3.4.0** - Utility-first CSS framework
+- **TypeScript** - Type safety out of the box
+- **ESLint + Prettier** - Code quality and formatting
+- **Framer Motion** - Smooth animations
+
+## 🛠️ Tech Stack
+
+- **Framework:** Next.js 15 with App Router
+- **UI Library:** NextUI v2.6.11 (last stable before HeroUI transition)
+- **Styling:** Tailwind CSS v3.4.0
+- **Language:** TypeScript
+- **Animations:** Framer Motion
+- **Code Quality:** ESLint + Prettier
+
+## 🚀 Quick Start
+
+1. **Clone the template:**
+
+   ```bash
+   git clone <your-repo-url>
+   cd nextjs-project-template
+   ```
+
+2. **Install dependencies:**
+
+   ```bash
+   npm install
+   ```
+
+3. **Start development server:**
+
+   ```bash
+   npm run dev
+   ```
+
+4. **Open your browser:**
+
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 📁 Project Structure
+
+```text
+├── app/
+│   ├── globals.css          # Global styles with Tailwind
+│   ├── layout.tsx           # Root layout with NextUIProvider
+│   └── page.tsx             # Home page with NextUI components
+├── tailwind.config.js       # Tailwind + NextUI configuration
+├── postcss.config.js        # PostCSS configuration
+└── package.json             # Dependencies and scripts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🎨 Customization
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Adding New NextUI Components
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```tsx
+import { Button, Card, Input } from '@nextui-org/react';
 
-## Learn More
+export default function MyComponent() {
+  return (
+    <Card>
+      <Input placeholder="Enter text..." />
+      <Button color="primary">Submit</Button>
+    </Card>
+  );
+}
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Tailwind CSS Classes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```tsx
+<div className="bg-blue-500 text-white p-4 rounded-lg">
+  Custom styled content
+</div>
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📚 Documentation
 
-## Deploy on Vercel
+- [Next.js Documentation](https://nextjs.org/docs)
+- [NextUI Components](https://nextui.org/docs)
+- [Tailwind CSS](https://tailwindcss.com/docs)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔧 Available Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+## 🚀 Deployment
+
+Deploy easily on Vercel:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/nextjs-project-template)
+
+## 📄 License
+
+MIT License - feel free to use this template for your projects!
