@@ -11,7 +11,7 @@ const config = {
   theme: {
     extend: {},
   },
-  darkMode: 'class',
+  darkMode: 'dark',
   plugins: [nextui()],
 };
 
