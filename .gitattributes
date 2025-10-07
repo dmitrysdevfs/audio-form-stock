@@ -1,0 +1,16 @@
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# Explicitly declare text files you want to always be normalized and converted
+# to native line endings on checkout
+*.js text eol=crlf
+*.jsx text eol=crlf
+*.ts text eol=crlf
+*.tsx text eol=crlf
+*.json text eol=crlf
+*.css text eol=crlf
+*.md text eol=crlf
+*.html text eol=crlf
+
+# Declare files that will always have LF line endings on checkout
+*.sh text eol=lf
