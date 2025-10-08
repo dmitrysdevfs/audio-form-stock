@@ -77,12 +77,18 @@ export default function Navigation() {
     return 'rounded-none';
   };
 
+  const getEdgeMargin = (index: number, length: number) => {
+    if (index === 0) return 'ml-[-13px]'; // left edge
+    if (index === length - 1) return 'mr-[-13px]'; // right edge
+    return '';
+  };
+
   return (
     <Navbar className="border-none relative top-[14.5vh] -mt-16">
       <NavbarContent className="w-full" justify="center">
         <div
           ref={containerRef}
-          className="w-[296px] h-[38px] flex items-center justify-center rounded-large bg-gradient-to-r from-[#FF1CF7] to-[#00F0FF]"
+          className="w-[319px] h-[38px] flex items-center justify-center rounded-large bg-gradient-to-r from-[#FF1CF7] to-[#00F0FF]"
         >
           <div className="w-full h-full bg-transparent rounded-large flex items-center justify-between px-4">
             {navItems.map((item, index) => {
@@ -94,7 +100,7 @@ export default function Navigation() {
                   <Link
                     color={isActive ? 'primary' : 'foreground'}
                     href={item.href}
-                    className={`text-xs px-7 py-[8px] bg-black ${roundedClass}`}
+                    className={`text-xs px-9 py-[8px] bg-black ${roundedClass} ${getEdgeMargin(index, navItems.length)}`}
                   >
                     {isActive ? (
                       <span
