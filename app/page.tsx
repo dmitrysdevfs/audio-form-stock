@@ -18,7 +18,9 @@ export default function Home() {
             NextUI components are working perfectly with Tailwind CSS v3!
           </p>
           <div className="flex gap-2">
-            <Button color="primary">Get Started</Button>
+            <Button color="primary" as="a" href="/form">
+              View Form
+            </Button>
             <Button color="secondary" variant="bordered">
               Learn More
             </Button>
