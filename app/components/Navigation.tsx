@@ -6,6 +6,11 @@ import { usePathname } from 'next/navigation';
 export default function Navigation() {
   const pathname = usePathname();
 
+  // Don't show navigation on home page
+  if (pathname === '/') {
+    return null;
+  }
+
   const navItems = [
     { name: 'audio', href: '/audio' },
     { name: 'form', href: '/form' },
