@@ -8,8 +8,9 @@ import {
   TableRow,
   TableCell,
   Pagination,
+  Input,
 } from '@nextui-org/react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { MOCK_STOCKS_DATA, type Stock } from '../api/MOCK_STOCKS_DATA';
 import { formatMarketCap, formatPrice, formatChangePercentage } from '../utils';
 
@@ -28,14 +29,34 @@ const ITEMS_PER_PAGE = 10;
 export default function StockPage() {
   const [stocks] = useState<Stock[]>(MOCK_STOCKS_DATA);
   const [currentPage, setCurrentPage] = useState(1);
+  const [countryFilter, setCountryFilter] = useState('');
+  const [symbolFilter, setSymbolFilter] = useState('');
 
-  const totalPages = Math.ceil(stocks.length / ITEMS_PER_PAGE);
+  const filteredStocks = useMemo(() => {
+    return stocks.filter(stock => {
+      const matchesCountry =
+        !countryFilter || stock.country.toLowerCase().includes(countryFilter.toLowerCase());
+      const matchesSymbol =
+        !symbolFilter ||
+        stock.symbol.toLowerCase().includes(symbolFilter.toLowerCase()) ||
+        stock.name.toLowerCase().includes(symbolFilter.toLowerCase());
+
+      return matchesCountry && matchesSymbol;
+    });
+  }, [stocks, countryFilter, symbolFilter]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [countryFilter, symbolFilter]);
+
+  const totalPages = Math.ceil(filteredStocks.length / ITEMS_PER_PAGE);
 
   const paginatedStocks = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return stocks.slice(startIndex, endIndex);
-  }, [stocks, currentPage]);
+    return filteredStocks.slice(startIndex, endIndex);
+  }, [filteredStocks, currentPage]);
 
   const renderCell = (stock: Stock, columnKey: string, index: number) => {
     switch (columnKey) {
@@ -101,6 +122,38 @@ export default function StockPage() {
   return (
     <div className="min-h-[calc(100vh-12rem)] bg-background p-4 mt-48">
       <div className="max-w-7xl mx-auto">
+        <div
+          className="flex flex-col items-center"
+          style={{ marginTop: '8px', marginBottom: '60px', gap: '30px' }}
+        >
+          <Input
+            placeholder="Enter your country"
+            value={countryFilter}
+            onChange={e => setCountryFilter(e.target.value)}
+            variant="bordered"
+            color="default"
+            size="md"
+            radius="lg"
+            classNames={{
+              input: 'px-3',
+              inputWrapper: 'w-[319px] h-[38px] mx-auto',
+            }}
+          />
+          <Input
+            placeholder="Enter symbol or name"
+            value={symbolFilter}
+            onChange={e => setSymbolFilter(e.target.value)}
+            variant="bordered"
+            color="default"
+            size="md"
+            radius="lg"
+            classNames={{
+              input: 'px-3',
+              inputWrapper: 'w-[319px] h-[38px] mx-auto',
+            }}
+          />
+        </div>
+
         <Table aria-label="Stock market data table" className="min-h-[400px]">
           <TableHeader>
             {columns.map(column => (
