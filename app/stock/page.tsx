@@ -1,7 +1,15 @@
 'use client';
 
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@nextui-org/react';
-import { useState } from 'react';
+import {
+  Table,
+  TableHeader,
+  TableColumn,
+  TableBody,
+  TableRow,
+  TableCell,
+  Pagination,
+} from '@nextui-org/react';
+import { useState, useMemo } from 'react';
 import { MOCK_STOCKS_DATA, type Stock } from '../api/MOCK_STOCKS_DATA';
 import { formatMarketCap, formatPrice, formatChangePercentage } from '../utils';
 
@@ -15,8 +23,19 @@ const columns = [
   { key: 'monthlyChangesPercentage', label: 'Price change per month' },
 ];
 
+const ITEMS_PER_PAGE = 10;
+
 export default function StockPage() {
   const [stocks] = useState<Stock[]>(MOCK_STOCKS_DATA);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(stocks.length / ITEMS_PER_PAGE);
+
+  const paginatedStocks = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return stocks.slice(startIndex, endIndex);
+  }, [stocks, currentPage]);
 
   const renderCell = (stock: Stock, columnKey: string, index: number) => {
     switch (columnKey) {
@@ -89,15 +108,32 @@ export default function StockPage() {
             ))}
           </TableHeader>
           <TableBody emptyContent="No stocks found">
-            {stocks.map((stock, index) => (
+            {paginatedStocks.map((stock, index) => (
               <TableRow key={stock.id}>
                 {columnKey => (
-                  <TableCell>{renderCell(stock, columnKey as string, index)}</TableCell>
+                  <TableCell>
+                    {renderCell(
+                      stock,
+                      columnKey as string,
+                      (currentPage - 1) * ITEMS_PER_PAGE + index
+                    )}
+                  </TableCell>
                 )}
               </TableRow>
             ))}
           </TableBody>
         </Table>
+
+        <div className="flex justify-center mt-6">
+          <Pagination
+            total={totalPages}
+            page={currentPage}
+            onChange={setCurrentPage}
+            showControls
+            showShadow
+            color="primary"
+          />
+        </div>
       </div>
     </div>
   );
