@@ -67,7 +67,7 @@ fastify.get('/test-mongo', async (request, reply) => {
 // Start server
 const start = async () => {
   try {
-    const port = 3001;
+    const port = Number(process.env.PORT) || 3001;
     await fastify.listen({ port, host: '0.0.0.0' });
     fastify.log.info({ port }, 'Server started');
   } catch (err) {
