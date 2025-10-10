@@ -34,6 +34,7 @@ npm run lint:fix    # Auto-fix issues
 
 - `GET /` - Basic hello world response
 - `GET /health` - Server health check
+- `GET /test-mongo` - Test MongoDB connection
 
 Server runs on port 3001.
 
@@ -42,7 +43,9 @@ Server runs on port 3001.
 ```text
 backend/
 ├── src/
-│   └── index.ts          # Main server file
+│   ├── index.ts          # Main server file
+│   └── plugins/
+│       └── database.ts   # MongoDB connection plugin
 ├── package.json          # Dependencies and scripts
 ├── tsconfig.json         # TypeScript configuration
 ├── eslint.config.js      # ESLint configuration
@@ -52,13 +55,25 @@ backend/
 ## Tech Stack
 
 - **Fastify v5.6.0** - Fast and low overhead web framework
+- **MongoDB** - Database with @fastify/mongodb plugin
 - **TypeScript** - Type safety and better development experience
 - **ESM Modules** - Modern JavaScript module system
 - **ESLint** - Code quality and consistency
+- **Pino-pretty** - Beautiful logging in development
+
+## Environment Setup
+
+Create a `.env` file in the backend directory:
+
+```env
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/audio-form-stock?retryWrites=true&w=majority
+PORT=3001
+NODE_ENV=development
+```
 
 ## Next Steps
 
-1. Add MongoDB Atlas connection
-2. Create user email routes
-3. Add data validation
-4. Integrate with frontend
+1. Set up MongoDB Atlas connection
+2. Install dependencies: `npm install`
+3. Start development server: `npm run dev`
+4. Test MongoDB connection: `GET /test-mongo`

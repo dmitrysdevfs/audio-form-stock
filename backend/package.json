@@ -12,7 +12,11 @@
     "lint:fix": "eslint src/**/*.ts --fix"
   },
   "dependencies": {
-    "fastify": "^5.6.0"
+    "@fastify/mongodb": "^9.0.0",
+    "dotenv": "^17.2.3",
+    "fastify": "^5.6.0",
+    "fastify-plugin": "^5.0.0",
+    "pino-pretty": "^13.1.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
