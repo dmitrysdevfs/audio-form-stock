@@ -1,17 +1,19 @@
-# NextJS Project Template
+# Audio Form Stock - Frontend
 
-A modern, production-ready NextJS template with NextUI components and Tailwind CSS v3.
+A modern NextJS application for audio-based stock market analysis with form handling and data visualization.
 
-## 🚀 Features
+## Features
 
-- **Next.js 15.5.4** - Latest stable version
+- **Next.js 15.5.4** - Latest stable version with App Router
 - **NextUI v2.6.11** - Beautiful React components
 - **Tailwind CSS v3.4.0** - Utility-first CSS framework
 - **TypeScript** - Type safety out of the box
-- **ESLint + Prettier** - Code quality and formatting
-- **Framer Motion** - Smooth animations
+- **Framer Motion** - Smooth animations and transitions
+- **Multi-step Forms** - Form handling with validation
+- **Stock Market Data** - Stock data with filtering and pagination
+- **Audio Processing** - Microphone access for voice analysis (planned)
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Framework:** Next.js 15 with App Router
 - **UI Library:** NextUI v2.6.11 (last stable before HeroUI transition)
@@ -20,13 +22,13 @@ A modern, production-ready NextJS template with NextUI components and Tailwind C
 - **Animations:** Framer Motion
 - **Code Quality:** ESLint + Prettier
 
-## 🚀 Quick Start
+## Quick Start
 
-1. **Clone the template:**
+1. **Clone the repository:**
 
    ```bash
    git clone <your-repo-url>
-   cd nextjs-project-template
+   cd audio-form-stock/frontend
    ```
 
 2. **Install dependencies:**
@@ -45,62 +47,102 @@ A modern, production-ready NextJS template with NextUI components and Tailwind C
 
    Navigate to [http://localhost:3000](http://localhost:3000)
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 ├── app/
-│   ├── globals.css          # Global styles with Tailwind
-│   ├── layout.tsx           # Root layout with NextUIProvider
-│   └── page.tsx             # Home page with NextUI components
-├── tailwind.config.js       # Tailwind + NextUI configuration
-├── postcss.config.js        # PostCSS configuration
-└── package.json             # Dependencies and scripts
+│   ├── api/
+│   │   └── MOCK_STOCKS_DATA.ts    # Mock stock market data
+│   ├── audio/
+│   │   └── page.tsx               # Audio recording page (coming soon)
+│   ├── components/
+│   │   └── Navigation.tsx         # Navigation component
+│   ├── form/
+│   │   └── page.tsx               # Multi-step form with validation
+│   ├── stock/
+│   │   └── page.tsx               # Stock market data table with filtering
+│   ├── utils/
+│   │   ├── formatters.ts          # Data formatting utilities
+│   │   └── index.ts               # Utility exports
+│   ├── globals.css                # Global styles with Tailwind
+│   ├── layout.tsx                 # Root layout with NextUIProvider
+│   ├── page.tsx                   # Home page with navigation
+│   └── providers.tsx              # App providers configuration
+├── tailwind.config.js             # Tailwind + NextUI configuration
+├── postcss.config.js              # PostCSS configuration
+└── package.json                   # Dependencies and scripts
 ```
 
-## 🎨 Customization
+## Monorepo Context
 
-### Adding New NextUI Components
+This frontend is part of a fullstack monorepo [`audio-form-stock`](../README.md), which includes:
 
-```tsx
-import { Button, Card, Input } from '@nextui-org/react';
+- `frontend/` — this Next.js application
+- `backend/` — Fastify server with MongoDB integration (planned)
 
-export default function MyComponent() {
-  return (
-    <Card>
-      <Input placeholder="Enter text..." />
-      <Button color="primary">Submit</Button>
-    </Card>
-  );
-}
-```
+Each part is deployed independently: frontend on Vercel, backend on Render.
 
-### Tailwind CSS Classes
+## Current Development Status
 
-```tsx
-<div className="bg-blue-500 text-white p-4 rounded-lg">
-  Custom styled content
-</div>
-```
+### Registration Form (`/form`)
 
-## 📚 Documentation
+- Multi-step form with email field using NextUI components
+- Form validation and animated transitions
+- **Note:** Data submission to server not yet implemented
 
-- [Next.js Documentation](https://nextjs.org/docs)
-- [NextUI Components](https://nextui.org/docs)
-- [Tailwind CSS](https://tailwindcss.com/docs)
+### Stock Data (`/stock`)
 
-## 🔧 Available Scripts
+- Table with filtering by country and stock symbol
+- Displays company name, symbol, market cap, price, and daily changes
+- **Note:** Currently uses mock data from `app/api/MOCK_STOCKS_DATA.ts`. Real API integration via backend is planned
+
+### Audio Processing (`/audio`)
+
+- Placeholder page for future audio recording functionality
+- **Note:** Microphone access and voice processing not yet implemented
+
+### Planned Backend Integration
+
+- MongoDB integration for data storage
+- API integration with stock data providers (Alpha Vantage, Polygon.io, Finnhub, Yahoo Finance)
+- Data processing and validation
+
+## Environment Variables
+
+| Variable             | Description                          |
+|----------------------|--------------------------------------|
+| `NEXT_PUBLIC_API_URL` | URL to backend API (e.g. Render)     |
+
+> Define in `.env.local` for local development.
+
+## Available Routes
+
+- **`/`** - Home dashboard with navigation
+- **`/form`** - Multi-step form with validation
+- **`/stock`** - Stock market data with filtering
+- **`/audio`** - Audio recording (planned)
+
+## Available Scripts
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 
-## 🚀 Deployment
+## Documentation
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [NextUI Components](https://nextui.org/docs)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [Framer Motion](https://www.framer.com/motion/)
+
+## Deployment
 
 Deploy easily on Vercel:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/nextjs-project-template)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/audio-form-stock)
 
-## 📄 License
+## License
 
-MIT License - feel free to use this template for your projects!
+This repository was created as part of a test assignment.  
+Not intended for public reuse or redistribution.
