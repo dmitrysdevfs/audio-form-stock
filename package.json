@@ -1,0 +1,13 @@
+{
+  "name": "audio-form-stock",
+  "version": "1.0.0",
+  "description": "Full-stack application with Audio, Form, and Stock pages",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm install && npm run build",
+    "install:all": "npm install && cd frontend && npm install",
+    "start": "cd frontend && npm run start"
+  },
+  "devDependencies": {}
+}
