@@ -4,6 +4,7 @@ import React from 'react';
 import { Button, Input, Link, Tooltip } from '@nextui-org/react';
 import { AnimatePresence, domAnimation, LazyMotion, m } from 'framer-motion';
 import { Icon } from '@iconify/react';
+import { formApi } from '../api';
 
 export default function FormPage() {
   const [isPasswordVisible, setIsPasswordVisible] = React.useState(false);
@@ -15,6 +16,8 @@ export default function FormPage() {
   const [isEmailValid, setIsEmailValid] = React.useState(true);
   const [isPasswordValid, setIsPasswordValid] = React.useState(true);
   const [isConfirmPasswordValid, setIsConfirmPasswordValid] = React.useState(true);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [registrationMessage, setRegistrationMessage] = React.useState('');
 
   const togglePasswordVisibility = () => setIsPasswordVisible(!isPasswordVisible);
   const toggleConfirmPasswordVisibility = () =>
@@ -81,15 +84,41 @@ export default function FormPage() {
     paginate(1);
   };
 
-  const handleConfirmPasswordSubmit = () => {
+  const handleConfirmPasswordSubmit = async () => {
     if (!confirmPassword.length || confirmPassword !== password) {
       setIsConfirmPasswordValid(false);
-
       return;
     }
+
     setIsConfirmPasswordValid(true);
-    // Submit logic or API call here
-    console.log(`Email: ${email}, Password: ${password}`);
+    setIsLoading(true);
+    setRegistrationMessage('');
+
+    try {
+      const result = await formApi.registerUser({
+        email,
+        password,
+        confirmPassword,
+      });
+
+      if (result.success) {
+        setRegistrationMessage('Registration successful!');
+        // Reset form or redirect
+        setTimeout(() => {
+          setEmail('');
+          setPassword('');
+          setConfirmPassword('');
+          setPage([0, 0]);
+          setRegistrationMessage('');
+        }, 3000);
+      } else {
+        setRegistrationMessage(result.error || 'Registration failed');
+      }
+    } catch (error) {
+      setRegistrationMessage(error instanceof Error ? error.message : 'Registration failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -225,16 +254,37 @@ export default function FormPage() {
                   }}
                 />
               )}
-              <Button fullWidth color="primary" type="submit">
-                {page === 0
-                  ? 'Continue with Email'
-                  : page === 1
-                    ? 'Enter Password'
-                    : 'Confirm Password'}
+              <Button
+                fullWidth
+                color="primary"
+                type="submit"
+                isLoading={isLoading}
+                disabled={isLoading}
+              >
+                {isLoading
+                  ? 'Registering...'
+                  : page === 0
+                    ? 'Continue with Email'
+                    : page === 1
+                      ? 'Enter Password'
+                      : 'Confirm Password'}
               </Button>
             </m.form>
           </AnimatePresence>
         </LazyMotion>
+
+        {registrationMessage && (
+          <div
+            className={`text-center text-small p-2 rounded ${
+              registrationMessage.includes('successful')
+                ? 'text-success bg-success-50'
+                : 'text-danger bg-danger-50'
+            }`}
+          >
+            {registrationMessage}
+          </div>
+        )}
+
         <p className="text-center text-small">
           Already have an account?&nbsp;
           <Link href="#" size="sm">
