@@ -12,6 +12,7 @@
     "lint:fix": "eslint src/**/*.ts --fix"
   },
   "dependencies": {
+    "@fastify/cors": "^11.1.0",
     "@fastify/mongodb": "^9.0.0",
     "dotenv": "^17.2.3",
     "fastify": "^5.6.0",
