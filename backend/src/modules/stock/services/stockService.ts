@@ -4,16 +4,20 @@ import {
   StockFilters,
   StockUpdateResponse,
   HealthResponse,
+  BatchUpdateInfo,
 } from '../types';
+import { PolygonService } from './polygonService.js';
 
 /**
  * Stock service for database operations
  */
 export class StockService {
   private fastify: FastifyInstance;
+  private polygonService: PolygonService;
 
   constructor(fastify: FastifyInstance) {
     this.fastify = fastify;
+    this.polygonService = new PolygonService();
   }
 
   /**
@@ -138,7 +142,7 @@ export class StockService {
   }
 
   /**
-   * Update stocks (placeholder for future implementation)
+   * Update stocks using Polygon.io API
    */
   async updateStocks(
     batchNumber: number,
@@ -146,14 +150,69 @@ export class StockService {
     forceUpdate = false
   ): Promise<StockUpdateResponse> {
     try {
-      // This will be implemented in the next phase
-      // For now, return a placeholder response
+      const batchInfo = this.calculateBatchInfo(batchNumber, totalBatches);
+      const errors: string[] = [];
+      let processed = 0;
+
+      // Get target symbols for this batch
+      const targetSymbols = await this.getTargetSymbols();
+      const batchSymbols = targetSymbols.slice(
+        batchInfo.startIndex,
+        batchInfo.endIndex
+      );
+
+      if (batchSymbols.length === 0) {
+        return {
+          success: true,
+          message: 'No symbols to process in this batch',
+          processed: 0,
+          totalBatches,
+          errors: [],
+        };
+      }
+
+      // Process batch with Polygon.io API
+      const polygonTickers = await this.polygonService.getTickersBatch(
+        batchSymbols
+      );
+
+      for (const ticker of polygonTickers) {
+        try {
+          // Get daily data for yesterday
+          const yesterday = this.polygonService.getYesterdayDate();
+          const dailyData = await this.polygonService.getDailyData(
+            ticker.ticker,
+            yesterday
+          );
+
+          // Convert to our format
+          const stockData = this.polygonService.convertToStockData(
+            ticker,
+            dailyData || undefined
+          );
+
+          // Save to database
+          await this.upsertStock(stockData);
+          processed++;
+
+          // Rate limiting delay
+          await this.delay(1000);
+        } catch (error) {
+          const errorMsg = `Error processing ${ticker.ticker}: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`;
+          errors.push(errorMsg);
+          console.error(errorMsg);
+        }
+      }
+
       return {
         success: true,
-        message: 'Stock update endpoint ready for implementation',
-        processed: 0,
+        message: `Processed batch ${batchNumber} of ${totalBatches}`,
+        processed,
+        nextBatch: batchNumber < totalBatches ? batchNumber + 1 : undefined,
         totalBatches,
-        errors: [],
+        errors,
       };
     } catch (error) {
       console.error('Error updating stocks:', error);
@@ -227,6 +286,340 @@ export class StockService {
       console.error('Error getting indexes:', error);
       throw error;
     }
+  }
+
+  /**
+   * Test Polygon.io integration
+   */
+  async testPolygonIntegration(): Promise<any> {
+    try {
+      // Test 1: Get tickers
+      const tickers = await this.polygonService.getTickers();
+
+      // Test 2: Get details for a specific ticker (AAPL)
+      const tickerDetails = await this.polygonService.getTickerDetails('AAPL');
+
+      // Test 3: Get daily data for AAPL
+      const yesterday = this.polygonService.getYesterdayDate();
+      const dailyData = await this.polygonService.getDailyData(
+        'AAPL',
+        yesterday
+      );
+
+      // Test 4: Convert to our format
+      const stockData = tickerDetails
+        ? this.polygonService.convertToStockData(
+            tickerDetails,
+            dailyData || undefined
+          )
+        : null;
+
+      return {
+        tickersCount: tickers.length,
+        tickerDetails: tickerDetails
+          ? {
+              symbol: tickerDetails.ticker,
+              name: tickerDetails.name,
+              market: tickerDetails.market,
+              locale: tickerDetails.locale,
+            }
+          : null,
+        dailyData: dailyData
+          ? {
+              symbol: dailyData.ticker,
+              close: dailyData.close || 0,
+              open: dailyData.open || 0,
+              high: dailyData.high || 0,
+              low: dailyData.low || 0,
+              volume: dailyData.volume || 0,
+            }
+          : null,
+        convertedStockData: stockData,
+        testDate: yesterday,
+      };
+    } catch (error) {
+      console.error('Error testing Polygon.io integration:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get target symbols for processing (330 companies)
+   */
+  private async getTargetSymbols(): Promise<string[]> {
+    // This would typically come from a configuration or database
+    // For now, we'll use a predefined list of major stocks
+    const nasdaq100 = [
+      'AAPL',
+      'MSFT',
+      'GOOGL',
+      'AMZN',
+      'TSLA',
+      'META',
+      'NVDA',
+      'NFLX',
+      'ADBE',
+      'CRM',
+      'PYPL',
+      'INTC',
+      'CMCSA',
+      'PEP',
+      'COST',
+      'TMUS',
+      'AVGO',
+      'TXN',
+      'QCOM',
+      'CHTR',
+      'SBUX',
+      'INTU',
+      'ISRG',
+      'GILD',
+      'MDLZ',
+      'BKNG',
+      'ADP',
+      'VRTX',
+      'REGN',
+      'CSX',
+      'AMAT',
+      'AMD',
+      'ATVI',
+      'ADSK',
+      'ILMN',
+      'LRCX',
+      'MU',
+      'AMGN',
+      'BIIB',
+      'FISV',
+      'CTAS',
+      'KLAC',
+      'SNPS',
+      'MCHP',
+      'CDNS',
+      'CTSH',
+      'WBA',
+      'EXC',
+      'AEP',
+      'SO',
+      'DUK',
+      'D',
+      'EXPE',
+      'PAYX',
+      'ORLY',
+      'ROST',
+      'DXCM',
+      'IDXX',
+      'SIRI',
+      'CHKP',
+      'VRSN',
+      'NTES',
+      'MRNA',
+      'BIDU',
+      'ALGN',
+      'CPRT',
+      'FAST',
+      'VRSK',
+      'ANSS',
+      'CTXS',
+      'WLTW',
+      'XEL',
+      'ILMN',
+      'MELI',
+      'TEAM',
+      'ZM',
+      'DOCU',
+      'CRWD',
+      'OKTA',
+      'SNOW',
+      'PLTR',
+      'ROKU',
+      'PTON',
+      'ZOOM',
+      'SQ',
+      'SHOP',
+      'TWLO',
+      'SPOT',
+      'UBER',
+      'LYFT',
+    ];
+
+    const sp500Top200 = [
+      'JNJ',
+      'JPM',
+      'V',
+      'PG',
+      'UNH',
+      'HD',
+      'MA',
+      'DIS',
+      'PYPL',
+      'BAC',
+      'XOM',
+      'T',
+      'PFE',
+      'ABT',
+      'VZ',
+      'KO',
+      'PEP',
+      'MRK',
+      'TMO',
+      'COST',
+      'WMT',
+      'ABBV',
+      'ACN',
+      'NKE',
+      'CVX',
+      'DHR',
+      'VZ',
+      'ADBE',
+      'TXN',
+      'NEE',
+      'LLY',
+      'UNP',
+      'PM',
+      'HON',
+      'IBM',
+      'SPGI',
+      'RTX',
+      'QCOM',
+      'LOW',
+      'AMGN',
+      'TGT',
+      'INTU',
+      'ISRG',
+      'GILD',
+      'MDLZ',
+      'BKNG',
+      'ADP',
+      'VRTX',
+      'REGN',
+      'CSX',
+      'AMAT',
+      'AMD',
+      'ATVI',
+      'ADSK',
+      'ILMN',
+      'LRCX',
+      'MU',
+      'AMGN',
+      'BIIB',
+      'FISV',
+      'CTAS',
+      'KLAC',
+      'SNPS',
+      'MCHP',
+      'CDNS',
+      'CTSH',
+      'WBA',
+      'EXC',
+      'AEP',
+      'SO',
+      'DUK',
+      'D',
+      'EXPE',
+      'PAYX',
+      'ORLY',
+      'ROST',
+      'DXCM',
+      'IDXX',
+      'SIRI',
+      'CHKP',
+      'VRSN',
+      'NTES',
+      'MRNA',
+      'BIDU',
+      'ALGN',
+      'CPRT',
+      'FAST',
+      'VRSK',
+      'ANSS',
+      'CTXS',
+      'WLTW',
+      'XEL',
+      'ILMN',
+      'MELI',
+      'TEAM',
+      'ZM',
+      'DOCU',
+      'CRWD',
+      'OKTA',
+      'SNOW',
+      'PLTR',
+      'ROKU',
+      'PTON',
+      'ZOOM',
+      'SQ',
+      'SHOP',
+      'TWLO',
+      'SPOT',
+      'UBER',
+      'LYFT',
+    ];
+
+    const dowJones30 = [
+      'AAPL',
+      'MSFT',
+      'UNH',
+      'JNJ',
+      'V',
+      'JPM',
+      'PG',
+      'HD',
+      'MA',
+      'DIS',
+      'PYPL',
+      'BAC',
+      'XOM',
+      'T',
+      'PFE',
+      'ABT',
+      'VZ',
+      'KO',
+      'PEP',
+      'MRK',
+      'TMO',
+      'COST',
+      'WMT',
+      'ABBV',
+      'ACN',
+      'NKE',
+      'CVX',
+      'DHR',
+      'VZ',
+      'ADBE',
+    ];
+
+    // Combine and deduplicate
+    const allSymbols = [
+      ...new Set([...nasdaq100, ...sp500Top200, ...dowJones30]),
+    ];
+    return allSymbols.slice(0, 330); // Limit to 330 companies
+  }
+
+  /**
+   * Calculate batch information
+   */
+  private calculateBatchInfo(
+    batchNumber: number,
+    totalBatches: number
+  ): BatchUpdateInfo {
+    const BATCH_SIZE = 50;
+    const startIndex = (batchNumber - 1) * BATCH_SIZE;
+    const endIndex = Math.min(startIndex + BATCH_SIZE, 330);
+
+    return {
+      batchNumber,
+      totalBatches,
+      startIndex,
+      endIndex,
+      symbols: [], // Will be populated by getTargetSymbols
+    };
+  }
+
+  /**
+   * Delay utility
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**

@@ -46,6 +46,11 @@ const stockRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     schema: updateStocksSchema,
     handler: stockController.updateStocks.bind(stockController),
   });
+
+  // GET /api/stocks/test-polygon - Test Polygon.io integration
+  fastify.get('/test-polygon', {
+    handler: stockController.testPolygonIntegration.bind(stockController),
+  });
 };
 
 export { stockRoutes };

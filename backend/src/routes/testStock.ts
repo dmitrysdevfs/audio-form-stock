@@ -33,12 +33,12 @@ const testStockRoutes: FastifyPluginAsync = async (
         message: 'Sample stock data added successfully',
         data: sampleStock,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding sample stock:', error);
       return reply.status(500).send({
         success: false,
         message: 'Error adding sample stock',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error.message || 'Unknown error',
       });
     }
   });
@@ -53,12 +53,12 @@ const testStockRoutes: FastifyPluginAsync = async (
         message: 'Stocks retrieved successfully',
         data: result,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting stocks:', error);
       return reply.status(500).send({
         success: false,
         message: 'Error getting stocks',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error.message || 'Unknown error',
       });
     }
   });
@@ -73,12 +73,12 @@ const testStockRoutes: FastifyPluginAsync = async (
         message: 'Health status retrieved successfully',
         data: health,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting health status:', error);
       return reply.status(500).send({
         success: false,
         message: 'Error getting health status',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error.message || 'Unknown error',
       });
     }
   });

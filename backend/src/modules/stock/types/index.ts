@@ -50,7 +50,7 @@ export interface StockUpdateResponse {
   success: boolean;
   message: string;
   processed: number;
-  nextBatch?: number;
+  nextBatch?: number | undefined;
   totalBatches: number;
   errors?: string[];
 }
@@ -110,18 +110,24 @@ export interface PolygonDailyData {
   resultsCount: number;
   adjusted: boolean;
   results: Array<{
-    v: number;
-    vw: number;
-    o: number;
-    c: number;
-    h: number;
-    l: number;
-    t: number;
-    n: number;
+    v: number; // volume
+    vw: number; // volume weighted average price
+    o: number; // open
+    c: number; // close
+    h: number; // high
+    l: number; // low
+    t: number; // timestamp
+    n: number; // number of transactions
   }>;
   status: string;
   request_id: string;
   count: number;
+  // Additional properties for easier access
+  open?: number;
+  close?: number;
+  high?: number;
+  low?: number;
+  volume?: number;
 }
 
 export interface BatchUpdateInfo {

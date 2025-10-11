@@ -164,4 +164,26 @@ export class StockController {
       });
     }
   }
+
+  /**
+   * GET /api/stocks/test-polygon - Test Polygon.io integration
+   */
+  async testPolygonIntegration(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const result = await this.stockService.testPolygonIntegration();
+
+      return reply.send({
+        success: true,
+        message: 'Polygon.io integration test completed',
+        data: result,
+      });
+    } catch (error) {
+      console.error('Error in testPolygonIntegration:', error);
+      return reply.status(500).send({
+        success: false,
+        message: 'Polygon.io integration test failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
 }
