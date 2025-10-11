@@ -1,0 +1,99 @@
+name: Daily Stock Update
+
+on:
+  schedule:
+    # Run at 6:00 PM EST every day (after market close)
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-stocks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wake up Render server
+        run: |
+          echo "Waking up Render server..."
+          curl -f ${{ secrets.RENDER_URL }}/api/stocks/health || echo "Server might be sleeping, continuing..."
+          sleep 10
+
+      - name: Update stocks batch 1
+        run: |
+          echo "Processing batch 1 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 1, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 2
+        run: |
+          echo "Processing batch 2 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 2, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 3
+        run: |
+          echo "Processing batch 3 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 3, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 4
+        run: |
+          echo "Processing batch 4 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 4, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 5
+        run: |
+          echo "Processing batch 5 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 5, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 6
+        run: |
+          echo "Processing batch 6 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 6, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 7
+        run: |
+          echo "Processing batch 7 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 7, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Verify update
+        run: |
+          echo "Verifying update..."
+          curl -f ${{ secrets.RENDER_URL }}/api/stocks/health
+
+  keep-alive:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Keep Render server alive
+        run: |
+          echo "Keeping Render server alive..."
+          for i in {1..5}; do
+            curl -f ${{ secrets.RENDER_URL }}/api/stocks/health || echo "Ping $i failed"
+            sleep 300
+          done

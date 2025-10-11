@@ -195,8 +195,8 @@ export class StockService {
           await this.upsertStock(stockData);
           processed++;
 
-          // Rate limiting delay
-          await this.delay(1000);
+          // Rate limiting delay (5 calls/minute = 12 seconds)
+          await this.delay(12000);
         } catch (error) {
           const errorMsg = `Error processing ${ticker.ticker}: ${
             error instanceof Error ? error.message : 'Unknown error'
@@ -451,7 +451,6 @@ export class StockService {
       'HD',
       'MA',
       'DIS',
-      'PYPL',
       'BAC',
       'XOM',
       'T',
@@ -459,18 +458,14 @@ export class StockService {
       'ABT',
       'VZ',
       'KO',
-      'PEP',
       'MRK',
       'TMO',
-      'COST',
       'WMT',
       'ABBV',
       'ACN',
       'NKE',
       'CVX',
       'DHR',
-      'VZ',
-      'ADBE',
       'TXN',
       'NEE',
       'LLY',
@@ -480,11 +475,8 @@ export class StockService {
       'IBM',
       'SPGI',
       'RTX',
-      'QCOM',
       'LOW',
-      'AMGN',
       'TGT',
-      'INTU',
       'ISRG',
       'GILD',
       'MDLZ',
@@ -500,7 +492,6 @@ export class StockService {
       'ILMN',
       'LRCX',
       'MU',
-      'AMGN',
       'BIIB',
       'FISV',
       'CTAS',
@@ -535,7 +526,6 @@ export class StockService {
       'CTXS',
       'WLTW',
       'XEL',
-      'ILMN',
       'MELI',
       'TEAM',
       'ZM',
@@ -566,7 +556,6 @@ export class StockService {
       'HD',
       'MA',
       'DIS',
-      'PYPL',
       'BAC',
       'XOM',
       'T',
@@ -574,17 +563,14 @@ export class StockService {
       'ABT',
       'VZ',
       'KO',
-      'PEP',
       'MRK',
       'TMO',
-      'COST',
       'WMT',
       'ABBV',
       'ACN',
       'NKE',
       'CVX',
       'DHR',
-      'VZ',
       'ADBE',
     ];
 
@@ -602,7 +588,7 @@ export class StockService {
     batchNumber: number,
     totalBatches: number
   ): BatchUpdateInfo {
-    const BATCH_SIZE = 50;
+    const BATCH_SIZE = 10; // Зменшено з 50 до 10
     const startIndex = (batchNumber - 1) * BATCH_SIZE;
     const endIndex = Math.min(startIndex + BATCH_SIZE, 330);
 

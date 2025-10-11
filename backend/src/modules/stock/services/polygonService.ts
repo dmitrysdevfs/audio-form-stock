@@ -27,13 +27,7 @@ export class PolygonService {
    */
   async getTickers(): Promise<PolygonTicker[]> {
     try {
-      const response = await this.rest.listTickers({
-        market: 'stocks',
-        active: 'true',
-        order: 'asc',
-        limit: '1000',
-        sort: 'ticker',
-      });
+      const response = await this.rest.listTickers('stocks');
 
       return response.results || [];
     } catch (error) {
@@ -67,9 +61,7 @@ export class PolygonService {
     date: string
   ): Promise<PolygonDailyData | null> {
     try {
-      const response = await this.rest.getStocksOpenClose(symbol, date, {
-        adjusted: true,
-      });
+      const response = await this.rest.getStocksOpenClose(symbol, date);
 
       return response;
     } catch (error: any) {
@@ -102,7 +94,7 @@ export class PolygonService {
           results.push(details);
         }
 
-        // Rate limiting: wait between requests
+        // Rate limiting: wait between requests (5 calls/minute = 12 seconds)
         if (i < symbols.length - 1) {
           await this.delay(this.rateLimitDelay);
         }
@@ -147,23 +139,23 @@ export class PolygonService {
    * Determine country based on ticker information
    */
   private determineCountry(ticker: PolygonTickerDetails): string {
-    // US stocks
-    if (ticker.locale === 'us' || ticker.market === 'stocks') {
-      return 'United States';
+    // Простий мапінг locale → країна
+    switch (ticker.locale) {
+      case 'us':
+        return 'United States';
+      case 'ca':
+        return 'Canada';
+      case 'uk':
+        return 'United Kingdom';
+      case 'eu':
+        return 'Europe';
+      case 'asia':
+        return 'Asia';
+      case 'au':
+        return 'Australia';
+      default:
+        return 'Unknown';
     }
-
-    // Canadian stocks
-    if (ticker.locale === 'ca' || ticker.primary_exchange?.includes('TSX')) {
-      return 'Canada';
-    }
-
-    // European stocks
-    if (ticker.locale === 'eu' || ticker.primary_exchange?.includes('LSE')) {
-      return 'United Kingdom';
-    }
-
-    // Default fallback
-    return 'Unknown';
   }
 
   /**

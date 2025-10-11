@@ -1,0 +1,24 @@
+name: Keep Render Server Alive
+
+on:
+  schedule:
+    # Run every 10 minutes during business hours (9 AM - 6 PM EST)
+    - cron: '*/10 14-23 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping-server:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Render server
+        run: |
+          echo "Pinging Render server to keep it alive..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.RENDER_URL }}/api/stocks/health)
+          echo "Response code: $response"
+
+          if [ "$response" = "200" ]; then
+            echo "Server is alive and responding"
+          else
+            echo "Server responded with code $response"
+          fi
