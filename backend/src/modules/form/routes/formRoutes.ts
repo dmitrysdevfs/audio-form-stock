@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
-import { FormController } from '../controllers/formController';
-import { UserService } from '../services/userService';
+import { FormController } from '../controllers/formController.js';
+import { UserService } from '../services/userService.js';
 
 export async function formRoutes(fastify: FastifyInstance) {
   // Initialize services and controllers

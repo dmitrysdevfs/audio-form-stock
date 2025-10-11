@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import { StockService } from '../modules/stock/services/stockService';
+import { StockService } from '../modules/stock/services/stockService.js';
 
 /**
  * Test routes for stock functionality

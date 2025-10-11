@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import { stockRoutes } from './routes/stockRoutes';
+import { stockRoutes } from './routes/stockRoutes.js';
 
 /**
  * Stock module registration

@@ -1,8 +1,8 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import dbConnector from './plugins/database';
-import routes from './routes/index';
-import { getAllowedOrigins, logAllowedOrigins } from './utils/cors';
+import dbConnector from './plugins/database.js';
+import routes from './routes/index.js';
+import { getAllowedOrigins, logAllowedOrigins } from './utils/cors.js';
 
 /**
  * Build and configure Fastify server instance

@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { StockService } from '../services/stockService';
-import { StockFilters, StockUpdateRequest } from '../types';
+import { StockService } from '../services/stockService.js';
+import { StockFilters, StockUpdateRequest } from '../types/index.js';
 
 /**
  * Stock controller for handling HTTP requests

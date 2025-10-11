@@ -1,9 +1,9 @@
 import { FastifyPluginAsync } from 'fastify';
-import healthRoutes from './health';
-import testMongoRoutes from './testMongo';
-import testStockRoutes from './testStock';
-import { formRoutes } from '../modules/form';
-import { stockRoutes } from '../modules/stock';
+import healthRoutes from './health.js';
+import testMongoRoutes from './testMongo.js';
+import testStockRoutes from './testStock.js';
+import { formRoutes } from '../modules/form/index.js';
+import { stockRoutes } from '../modules/stock/index.js';
 
 /**
  * Main routes registration

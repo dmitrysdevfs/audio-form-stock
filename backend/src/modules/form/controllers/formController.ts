@@ -1,8 +1,8 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { FormSchema } from '../validators/formSchema';
-import { UserService } from '../services/userService';
-import { ApiResponse } from '../types';
+import { FormSchema } from '../validators/formSchema.js';
+import { UserService } from '../services/userService.js';
+import { ApiResponse } from '../types/index.js';
 
 export class FormController {
   constructor(private userService: UserService) {}

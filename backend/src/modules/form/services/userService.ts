@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { User, UserResponse } from '../types';
+import { User, UserResponse } from '../types/index.js';
 
 export class UserService {
   constructor(private fastify: FastifyInstance) {}

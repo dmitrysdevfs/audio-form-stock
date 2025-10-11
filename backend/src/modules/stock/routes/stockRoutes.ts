@@ -1,11 +1,11 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import { StockController } from '../controllers/stockController';
+import { StockController } from '../controllers/stockController.js';
 import {
   getStocksSchema,
   getHealthSchema,
   updateStocksSchema,
   getStockBySymbolSchema,
-} from '../validators/stockSchema';
+} from '../validators/stockSchema.js';
 
 /**
  * Stock routes registration

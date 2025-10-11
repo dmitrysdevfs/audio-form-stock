@@ -1,5 +1,5 @@
-export { formRoutes } from './routes/formRoutes';
-export { FormController } from './controllers/formController';
-export { UserService } from './services/userService';
-export { FormSchema, type FormData } from './validators/formSchema';
-export type { User, UserResponse, ApiResponse } from './types';
+export { formRoutes } from './routes/formRoutes.js';
+export { FormController } from './controllers/formController.js';
+export { UserService } from './services/userService.js';
+export { FormSchema, type FormData } from './validators/formSchema.js';
+export type { User, UserResponse, ApiResponse } from './types/index.js';
