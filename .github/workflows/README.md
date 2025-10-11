@@ -46,10 +46,10 @@ Add these secrets in GitHub repository settings (Settings → Secrets → Action
 
 Polygon.io free plan limits:
 
-- 5 API calls per minute
-- 12 seconds between calls (implemented in backend)
-- 50 companies per batch = ~10 minutes per batch
-- 330 companies = 7 batches = ~70 minutes total
+- 3 API calls per minute (conservative approach)
+- 22 seconds between calls (implemented in backend)
+- 10 companies per batch = ~3.7 minutes per batch
+- 330 companies = 33 batches = ~2 hours total
 
 ## Usage
 

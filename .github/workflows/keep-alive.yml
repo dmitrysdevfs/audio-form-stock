@@ -2,8 +2,8 @@ name: Keep Render Server Alive
 
 on:
   schedule:
-    # Run every 10 minutes during business hours (9 AM - 6 PM EST)
-    - cron: '*/10 14-23 * * *'
+    # Run every 30 minutes during business hours (9 AM - 6 PM EST)
+    - cron: '*/30 14-23 * * *'
   workflow_dispatch:
 
 jobs:

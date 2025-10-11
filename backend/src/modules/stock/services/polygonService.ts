@@ -19,7 +19,7 @@ export class PolygonService {
       throw new Error('POLYGON_API_KEY environment variable is required');
     }
     this.rest = restClient(apiKey, 'https://api.polygon.io');
-    this.rateLimitDelay = 12000; // 12 seconds for 5 calls/minute limit
+    this.rateLimitDelay = 22000; // 22 seconds for safety (3 calls/minute)
   }
 
   /**

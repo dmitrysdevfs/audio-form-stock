@@ -195,8 +195,8 @@ export class StockService {
           await this.upsertStock(stockData);
           processed++;
 
-          // Rate limiting delay (5 calls/minute = 12 seconds)
-          await this.delay(12000);
+          // Rate limiting delay (3 calls/minute = 22 seconds)
+          await this.delay(22000);
         } catch (error) {
           const errorMsg = `Error processing ${ticker.ticker}: ${
             error instanceof Error ? error.message : 'Unknown error'

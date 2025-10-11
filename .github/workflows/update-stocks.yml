@@ -80,6 +80,239 @@ jobs:
             --max-time 300
           sleep 60
 
+      - name: Update stocks batch 8
+        run: |
+          echo "Processing batch 8 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 8, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 9
+        run: |
+          echo "Processing batch 9 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 9, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 10
+        run: |
+          echo "Processing batch 10 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 10, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 11
+        run: |
+          echo "Processing batch 11 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 11, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 12
+        run: |
+          echo "Processing batch 12 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 12, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 13
+        run: |
+          echo "Processing batch 13 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 13, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 14
+        run: |
+          echo "Processing batch 14 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 14, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 15
+        run: |
+          echo "Processing batch 15 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 15, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 16
+        run: |
+          echo "Processing batch 16 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 16, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 17
+        run: |
+          echo "Processing batch 17 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 17, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 18
+        run: |
+          echo "Processing batch 18 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 18, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 19
+        run: |
+          echo "Processing batch 19 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 19, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 20
+        run: |
+          echo "Processing batch 20 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 20, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 21
+        run: |
+          echo "Processing batch 21 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 21, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 22
+        run: |
+          echo "Processing batch 22 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 22, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 23
+        run: |
+          echo "Processing batch 23 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 23, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 24
+        run: |
+          echo "Processing batch 24 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 24, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 25
+        run: |
+          echo "Processing batch 25 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 25, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 26
+        run: |
+          echo "Processing batch 26 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 26, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 27
+        run: |
+          echo "Processing batch 27 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 27, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 28
+        run: |
+          echo "Processing batch 28 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 28, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 29
+        run: |
+          echo "Processing batch 29 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 29, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 30
+        run: |
+          echo "Processing batch 30 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 30, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 31
+        run: |
+          echo "Processing batch 31 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 31, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 32
+        run: |
+          echo "Processing batch 32 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 32, "totalBatches": 33}' \
+            --max-time 300
+          sleep 60
+
+      - name: Update stocks batch 33
+        run: |
+          echo "Processing batch 33 of 33..."
+          curl -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+            -H "Content-Type: application/json" \
+            -d '{"batchNumber": 33, "totalBatches": 33}' \
+            --max-time 300
+
       - name: Verify update
         run: |
           echo "Verifying update..."

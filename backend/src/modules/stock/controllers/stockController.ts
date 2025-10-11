@@ -100,8 +100,11 @@ export class StockController {
    */
   async updateStocks(request: FastifyRequest, reply: FastifyReply) {
     try {
+      console.log('Starting updateStocks...');
       const { batchNumber, totalBatches, forceUpdate } =
         request.body as StockUpdateRequest;
+
+      console.log(`Processing batch ${batchNumber} of ${totalBatches}`);
 
       const result = await this.stockService.updateStocks(
         batchNumber,
@@ -109,6 +112,7 @@ export class StockController {
         forceUpdate
       );
 
+      console.log('Update completed:', result);
       return reply.send(result);
     } catch (error) {
       console.error('Error in updateStocks:', error);
