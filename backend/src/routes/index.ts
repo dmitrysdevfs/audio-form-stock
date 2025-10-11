@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import healthRoutes from './health';
 import testMongoRoutes from './testMongo';
+import { formRoutes } from '../modules/form';
 
 /**
  * Main routes registration
@@ -15,6 +16,7 @@ const routes: FastifyPluginAsync = async (fastify) => {
   // Register sub-routes
   fastify.register(healthRoutes);
   fastify.register(testMongoRoutes);
+  fastify.register(formRoutes, { prefix: '/api/form' });
 };
 
 export default routes;
