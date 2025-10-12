@@ -1,0 +1,115 @@
+name: Daily Stock Update (Optimized - 4 calls/minute)
+
+on:
+  schedule:
+    # Run at 6:00 PM EST every day (after market close)
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-stocks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300 # 5 hours max (safe margin)
+
+    steps:
+      - name: Wake up Render server
+        run: |
+          echo "Waking up Render server..."
+          curl -f ${{ secrets.RENDER_URL }}/api/stocks/health || echo "Server might be sleeping, continuing..."
+          sleep 10
+
+      - name: Update stocks with optimized processing
+        run: |
+          echo "Starting optimized stock update process..."
+          echo "Rate limit: 4 calls/minute (optimal balance)"
+          echo "Data source: Yesterday's data (after market close) - Free plan compatible"
+          echo "Expected time: ~4 hours for all 330 symbols"
+
+          # Function to process batch with retry logic
+          process_batch() {
+            local batch_num=$1
+            local total_batches=$2
+            local max_retries=3
+            local retry_count=0
+            
+            while [ $retry_count -lt $max_retries ]; do
+              echo "Processing batch $batch_num of $total_batches (attempt $((retry_count + 1)))"
+              
+              response=$(curl -s -w "%{http_code}" -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
+                -H "Content-Type: application/json" \
+                -d "{\"batchNumber\": $batch_num, \"totalBatches\": $total_batches}" \
+                --max-time 600)  # 10 minutes timeout per batch
+              
+              http_code="${response: -3}"
+              response_body="${response%???}"
+              
+              echo "Batch $batch_num response: HTTP $http_code"
+              
+              if [ "$http_code" = "200" ]; then
+                echo "SUCCESS: Batch $batch_num completed successfully"
+                echo "$response_body" | jq -r '.message // "No message"'
+                return 0
+              elif [ "$http_code" = "429" ]; then
+                echo "RATE LIMIT: Rate limit hit for batch $batch_num, waiting 90 seconds..."
+                sleep 90  # Wait 90 seconds for rate limit
+                retry_count=$((retry_count + 1))
+              else
+                echo "ERROR: Error processing batch $batch_num: HTTP $http_code"
+                echo "$response_body"
+                retry_count=$((retry_count + 1))
+                sleep 30
+              fi
+            done
+            
+            echo "FAILED: Failed to process batch $batch_num after $max_retries attempts"
+            return 1
+          }
+
+          # Process batches with optimized timing
+          total_batches=42  # 330 symbols / 8 per batch
+          failed_batches=()
+
+          for batch in $(seq 1 $total_batches); do
+            echo "Starting batch $batch/$total_batches at $(date)"
+            
+            if ! process_batch $batch $total_batches; then
+              failed_batches+=($batch)
+            fi
+            
+            # Optimized delay: 5 minutes between batches
+            # This ensures we stay under the 4 calls/minute limit
+            if [ $batch -lt $total_batches ]; then
+              echo "Waiting 5 minutes before next batch..."
+              sleep 300  # 5 minutes
+            fi
+          done
+
+          # Report results
+          echo "=== UPDATE SUMMARY ==="
+          echo "Total batches: $total_batches"
+          echo "Failed batches: ${#failed_batches[@]}"
+          if [ ${#failed_batches[@]} -gt 0 ]; then
+            echo "Failed batch numbers: ${failed_batches[*]}"
+            echo "WARNING: Some batches failed - consider retrying failed batches"
+          else
+            echo "SUCCESS: All batches completed successfully!"
+          fi
+
+          # Final health check
+          echo "Performing final health check..."
+          curl -f ${{ secrets.RENDER_URL }}/api/stocks/health
+
+      - name: Generate update report
+        if: always()
+        run: |
+          echo "=== WORKFLOW COMPLETION REPORT ==="
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "Repository: ${{ github.repository }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Rate limit: 4 calls/minute (Optimal Balance)"
+          echo "Data source: Yesterday's data (after market close)"
+          echo "Batch size: 8 symbols per batch"
+          echo "Total estimated time: ~4 hours"
+          echo "Status: ${{ job.status }}"

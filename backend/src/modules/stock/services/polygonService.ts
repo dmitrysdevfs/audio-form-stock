@@ -19,12 +19,9 @@ export class PolygonService {
       throw new Error('POLYGON_API_KEY environment variable is required');
     }
     this.rest = restClient(apiKey, 'https://api.polygon.io');
-    this.rateLimitDelay = 22000; // 22 seconds for safety (3 calls/minute)
+    this.rateLimitDelay = 18000; // 18 seconds for optimal balance (4 calls/minute = 15s + 3s buffer)
   }
 
-  /**
-   * Get all tickers from Polygon.io using official client
-   */
   async getTickers(): Promise<PolygonTicker[]> {
     try {
       const response = await this.rest.listTickers('stocks');
@@ -36,16 +33,12 @@ export class PolygonService {
     }
   }
 
-  /**
-   * Get ticker details from Polygon.io using official client
-   */
   async getTickerDetails(symbol: string): Promise<PolygonTickerDetails | null> {
     try {
       const response = await this.rest.getTicker(symbol);
       return response.results || null;
     } catch (error: any) {
       console.error(`Error fetching ticker details for ${symbol}:`, error);
-      // Return null for 404 errors, throw for others
       if (error.status === 404) {
         return null;
       }
@@ -53,9 +46,6 @@ export class PolygonService {
     }
   }
 
-  /**
-   * Get daily data for a ticker using official client
-   */
   async getDailyData(
     symbol: string,
     date: string
@@ -66,7 +56,6 @@ export class PolygonService {
       return response;
     } catch (error: any) {
       console.error(`Error fetching daily data for ${symbol}:`, error);
-      // Return null for 404 errors, throw for others
       if (error.status === 404) {
         return null;
       }
@@ -74,14 +63,15 @@ export class PolygonService {
     }
   }
 
-  /**
-   * Get batch of tickers with rate limiting
-   */
   async getTickersBatch(symbols: string[]): Promise<PolygonTickerDetails[]> {
     const results: PolygonTickerDetails[] = [];
+    const startTime = Date.now();
+
+    console.log(`Fetching details for ${symbols.length} symbols`);
 
     for (let i = 0; i < symbols.length; i++) {
       const symbol = symbols[i];
+      const symbolStartTime = Date.now();
 
       if (!symbol) {
         console.error('Empty symbol found in batch');
@@ -92,24 +82,53 @@ export class PolygonService {
         const details = await this.getTickerDetails(symbol);
         if (details) {
           results.push(details);
+          const symbolTime = Date.now() - symbolStartTime;
+          console.log(`SUCCESS: ${symbol} details fetched in ${symbolTime}ms`);
+        } else {
+          console.log(`WARNING: ${symbol}: No details found`);
         }
 
-        // Rate limiting: wait between requests (5 calls/minute = 12 seconds)
         if (i < symbols.length - 1) {
-          await this.delay(this.rateLimitDelay);
+          const adaptiveDelay = this.calculateAdaptiveDelay(i, symbols.length);
+          if (adaptiveDelay > 0) {
+            console.log(`Waiting ${adaptiveDelay}ms before next request...`);
+            await this.delay(adaptiveDelay);
+          }
         }
       } catch (error) {
-        console.error(`Error processing symbol ${symbol}:`, error);
-        // Continue with next symbol
+        const symbolTime = Date.now() - symbolStartTime;
+        console.error(`ERROR: ${symbol}: Error after ${symbolTime}ms -`, error);
       }
     }
+
+    const totalTime = Date.now() - startTime;
+    console.log(
+      `Batch details fetch completed: ${results.length}/${symbols.length} in ${(
+        totalTime / 1000
+      ).toFixed(1)}s`
+    );
 
     return results;
   }
 
-  /**
-   * Convert Polygon ticker to our StockData format
-   */
+  private calculateAdaptiveDelay(
+    currentIndex: number,
+    totalSymbols: number
+  ): number {
+    let baseDelay = 18000;
+
+    const progress = currentIndex / totalSymbols;
+    if (progress > 0.8) {
+      baseDelay += 3000;
+    } else if (progress > 0.6) {
+      baseDelay += 2000;
+    }
+
+    const jitter = Math.random() * 1500 + 500;
+
+    return Math.floor(baseDelay + jitter);
+  }
+
   convertToStockData(
     ticker: PolygonTickerDetails,
     dailyData?: PolygonDailyData
@@ -128,18 +147,14 @@ export class PolygonService {
       price,
       changes,
       changesPercentage,
-      monthlyChanges: 0, // Will be calculated separately
-      monthlyChangesPercentage: 0, // Will be calculated separately
+      monthlyChanges: 0,
+      monthlyChangesPercentage: 0,
       indexes: this.determineIndexes(ticker),
       lastUpdated: new Date(),
     };
   }
 
-  /**
-   * Determine country based on ticker information
-   */
   private determineCountry(ticker: PolygonTickerDetails): string {
-    // Простий мапінг locale → країна
     switch (ticker.locale) {
       case 'us':
         return 'United States';
@@ -158,18 +173,12 @@ export class PolygonService {
     }
   }
 
-  /**
-   * Determine which indexes a stock belongs to
-   */
   private determineIndexes(ticker: PolygonTickerDetails): string[] {
     const indexes: string[] = [];
 
-    // This is a simplified mapping - in production, you'd want a more comprehensive mapping
     if (ticker.market_cap && ticker.market_cap > 10000000000) {
-      // > $10B
       indexes.push('Large Cap');
     } else if (ticker.market_cap && ticker.market_cap > 2000000000) {
-      // > $2B
       indexes.push('Mid Cap');
     } else {
       indexes.push('Small Cap');
@@ -178,25 +187,16 @@ export class PolygonService {
     return indexes;
   }
 
-  /**
-   * Delay utility for rate limiting
-   */
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  /**
-   * Get yesterday's date in YYYY-MM-DD format
-   */
   getYesterdayDate(): string {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     return yesterday.toISOString().split('T')[0] || '';
   }
 
-  /**
-   * Get date N days ago in YYYY-MM-DD format
-   */
   getDateNDaysAgo(days: number): string {
     const date = new Date();
     date.setDate(date.getDate() - days);

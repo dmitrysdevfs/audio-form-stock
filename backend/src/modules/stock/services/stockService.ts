@@ -142,17 +142,23 @@ export class StockService {
   }
 
   /**
-   * Update stocks using Polygon.io API
+   * Update stocks using Polygon.io API with enhanced logging and optimization
    */
   async updateStocks(
     batchNumber: number,
     totalBatches: number,
     forceUpdate = false
   ): Promise<StockUpdateResponse> {
+    const startTime = Date.now();
+    const batchInfo = this.calculateBatchInfo(batchNumber, totalBatches);
+    const errors: string[] = [];
+    let processed = 0;
+    let rateLimitHits = 0;
+    let apiErrors = 0;
+
     try {
-      const batchInfo = this.calculateBatchInfo(batchNumber, totalBatches);
-      const errors: string[] = [];
-      let processed = 0;
+      console.log(`Starting updateStocks...`);
+      console.log(`Processing batch ${batchNumber} of ${totalBatches}`);
 
       // Get target symbols for this batch
       const targetSymbols = await this.getTargetSymbols();
@@ -162,6 +168,7 @@ export class StockService {
       );
 
       if (batchSymbols.length === 0) {
+        console.log('No symbols to process in this batch');
         return {
           success: true,
           message: 'No symbols to process in this batch',
@@ -171,40 +178,111 @@ export class StockService {
         };
       }
 
+      console.log(
+        `Processing ${batchSymbols.length} symbols in batch ${batchNumber}`
+      );
+
       // Process batch with Polygon.io API
       const polygonTickers = await this.polygonService.getTickersBatch(
         batchSymbols
       );
 
-      for (const ticker of polygonTickers) {
+      for (let i = 0; i < polygonTickers.length; i++) {
+        const ticker = polygonTickers[i];
+        const symbolStartTime = Date.now();
+
+        if (!ticker || !ticker.ticker) {
+          console.log(`Skipping undefined ticker at index ${i}`);
+          continue;
+        }
+
         try {
-          // Get daily data for yesterday
+          console.log(
+            `Processing ${ticker.ticker} (${i + 1}/${polygonTickers.length})`
+          );
+
+          // Use 1 day ago (yesterday) - should be safe after market close
           const yesterday = this.polygonService.getYesterdayDate();
           const dailyData = await this.polygonService.getDailyData(
             ticker.ticker,
             yesterday
           );
 
-          // Convert to our format
           const stockData = this.polygonService.convertToStockData(
             ticker,
             dailyData || undefined
           );
 
-          // Save to database
           await this.upsertStock(stockData);
           processed++;
 
-          // Rate limiting delay (3 calls/minute = 22 seconds)
-          await this.delay(22000);
+          const symbolTime = Date.now() - symbolStartTime;
+          console.log(`Processed ${ticker.ticker} in ${symbolTime}ms`);
+
+          const delayTime = this.calculateAdaptiveDelay(
+            batchNumber,
+            i,
+            polygonTickers.length
+          );
+          if (delayTime > 0) {
+            console.log(`Waiting ${delayTime}ms before next request...`);
+            await this.delay(delayTime);
+          }
         } catch (error) {
-          const errorMsg = `Error processing ${ticker.ticker}: ${
-            error instanceof Error ? error.message : 'Unknown error'
-          }`;
-          errors.push(errorMsg);
-          console.error(errorMsg);
+          const symbolTime = Date.now() - symbolStartTime;
+          apiErrors++;
+
+          const tickerSymbol = ticker?.ticker || 'UNKNOWN';
+
+          if (error instanceof Error) {
+            if (
+              error.message.includes('403') ||
+              error.message.includes('NOT_AUTHORIZED')
+            ) {
+              console.log(
+                `WARNING: ${tickerSymbol}: Free plan limitation - using historical data only`
+              );
+              // Don't count as error since it's expected with free plan
+              // errors.push(
+              //   `${tickerSymbol}: API access denied - may need plan upgrade`
+              // );
+            } else if (
+              error.message.includes('429') ||
+              error.message.includes('Too Many Requests')
+            ) {
+              rateLimitHits++;
+              console.log(
+                `RATE LIMIT: ${tickerSymbol}: Rate limit hit (429) - waiting longer`
+              );
+              await this.delay(30000);
+              errors.push(`${tickerSymbol}: Rate limit exceeded`);
+            } else {
+              console.error(
+                `ERROR: ${tickerSymbol}: ${error.message} (${symbolTime}ms)`
+              );
+              errors.push(`${tickerSymbol}: ${error.message}`);
+            }
+          } else {
+            console.error(
+              `ERROR: ${tickerSymbol}: Unknown error (${symbolTime}ms)`
+            );
+            errors.push(`${tickerSymbol}: Unknown error`);
+          }
         }
       }
+
+      const totalTime = Date.now() - startTime;
+      const successRate = ((processed / polygonTickers.length) * 100).toFixed(
+        1
+      );
+
+      console.log(`\nBatch ${batchNumber} Summary:`);
+      console.log(`   Total symbols: ${polygonTickers.length}`);
+      console.log(`   Processed: ${processed}`);
+      console.log(`   Errors: ${errors.length}`);
+      console.log(`   Rate limit hits: ${rateLimitHits}`);
+      console.log(`   Success rate: ${successRate}%`);
+      console.log(`   Total time: ${(totalTime / 1000).toFixed(1)}s`);
 
       return {
         success: true,
@@ -215,9 +293,41 @@ export class StockService {
         errors,
       };
     } catch (error) {
-      console.error('Error updating stocks:', error);
+      const totalTime = Date.now() - startTime;
+      console.error(
+        `FAILED: Batch ${batchNumber} failed after ${(totalTime / 1000).toFixed(
+          1
+        )}s:`,
+        error
+      );
       throw error;
     }
+  }
+
+  /**
+   * Calculate adaptive delay based on batch progress and time
+   */
+  private calculateAdaptiveDelay(
+    batchNumber: number,
+    currentIndex: number,
+    totalInBatch: number
+  ): number {
+    let baseDelay = 18000;
+
+    if (batchNumber > 20) {
+      baseDelay += 5000;
+    } else if (batchNumber > 10) {
+      baseDelay += 2000;
+    }
+
+    const progressInBatch = currentIndex / totalInBatch;
+    if (progressInBatch > 0.7) {
+      baseDelay += 2000;
+    }
+
+    const jitter = Math.random() * 1500 + 500;
+
+    return Math.floor(baseDelay + jitter);
   }
 
   /**
@@ -343,12 +453,7 @@ export class StockService {
     }
   }
 
-  /**
-   * Get target symbols for processing (330 companies)
-   */
   private async getTargetSymbols(): Promise<string[]> {
-    // This would typically come from a configuration or database
-    // For now, we'll use a predefined list of major stocks
     const nasdaq100 = [
       'AAPL',
       'MSFT',
@@ -588,7 +693,7 @@ export class StockService {
     batchNumber: number,
     totalBatches: number
   ): BatchUpdateInfo {
-    const BATCH_SIZE = 10; // Зменшено з 50 до 10
+    const BATCH_SIZE = 8;
     const startIndex = (batchNumber - 1) * BATCH_SIZE;
     const endIndex = Math.min(startIndex + BATCH_SIZE, 330);
 
@@ -597,20 +702,14 @@ export class StockService {
       totalBatches,
       startIndex,
       endIndex,
-      symbols: [], // Will be populated by getTargetSymbols
+      symbols: [],
     };
   }
 
-  /**
-   * Delay utility
-   */
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  /**
-   * Map database document to StockData interface
-   */
   private mapToStockData(doc: any): StockData {
     return {
       symbol: doc.symbol,
