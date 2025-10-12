@@ -201,16 +201,24 @@ export class StockService {
             `Processing ${ticker.ticker} (${i + 1}/${polygonTickers.length})`
           );
 
-          // Use 1 day ago (yesterday) - should be safe after market close
-          const yesterday = this.polygonService.getYesterdayDate();
+          // Get current day data for price
+          const today = this.polygonService.getYesterdayDate();
           const dailyData = await this.polygonService.getDailyData(
             ticker.ticker,
-            yesterday
+            today
+          );
+
+          // Get 30 days ago data for monthly calculation
+          const thirtyDaysAgo = this.polygonService.getDateNDaysAgo(30);
+          const monthlyData = await this.polygonService.getDailyData(
+            ticker.ticker,
+            thirtyDaysAgo
           );
 
           const stockData = this.polygonService.convertToStockData(
             ticker,
-            dailyData || undefined
+            dailyData || undefined,
+            monthlyData || undefined
           );
 
           await this.upsertStock(stockData);

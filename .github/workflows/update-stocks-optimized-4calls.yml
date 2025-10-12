@@ -22,7 +22,7 @@ jobs:
         run: |
           echo "Starting optimized stock update process..."
           echo "Rate limit: 4 calls/minute (optimal balance)"
-          echo "Data source: Yesterday's data (after market close) - Free plan compatible"
+          echo "Data source: 30 days ago (monthly historical data) - Free plan compatible"
           echo "Expected time: ~4 hours for all 330 symbols"
 
           # Function to process batch with retry logic
@@ -109,7 +109,7 @@ jobs:
           echo "Repository: ${{ github.repository }}"
           echo "Commit: ${{ github.sha }}"
           echo "Rate limit: 4 calls/minute (Optimal Balance)"
-          echo "Data source: Yesterday's data (after market close)"
+          echo "Data source: 30 days ago (monthly historical data)"
           echo "Batch size: 8 symbols per batch"
           echo "Total estimated time: ~4 hours"
           echo "Status: ${{ job.status }}"

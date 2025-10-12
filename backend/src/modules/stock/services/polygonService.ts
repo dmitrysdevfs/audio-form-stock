@@ -131,13 +131,20 @@ export class PolygonService {
 
   convertToStockData(
     ticker: PolygonTickerDetails,
-    dailyData?: PolygonDailyData
+    dailyData?: PolygonDailyData,
+    monthlyData?: PolygonDailyData
   ): StockData {
     const price = dailyData?.close || 0;
     const previousClose = dailyData?.open || 0;
     const changes = price - previousClose;
     const changesPercentage =
       previousClose > 0 ? (changes / previousClose) * 100 : 0;
+
+    // Calculate monthly changes
+    const monthlyPrice = monthlyData?.close || 0;
+    const monthlyChanges = price - monthlyPrice;
+    const monthlyChangesPercentage =
+      monthlyPrice > 0 ? (monthlyChanges / monthlyPrice) * 100 : 0;
 
     return {
       symbol: ticker.ticker,
@@ -147,8 +154,8 @@ export class PolygonService {
       price,
       changes,
       changesPercentage,
-      monthlyChanges: 0,
-      monthlyChangesPercentage: 0,
+      monthlyChanges,
+      monthlyChangesPercentage,
       indexes: this.determineIndexes(ticker),
       lastUpdated: new Date(),
     };
