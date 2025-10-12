@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import OpenAIRealtimeService from '../services/openaiService';
+import OpenAIRealtimeService from '../services/openaiService.js';
 
 interface AudioController {
   openaiService: OpenAIRealtimeService | null;
@@ -11,27 +11,33 @@ const audioController: AudioController = {
 
 export const initializeAudioController = async (fastify: FastifyInstance) => {
   const apiKey = process.env.OPENAI_API_KEY;
-  
+
   if (!apiKey) {
     fastify.log.warn('OPENAI_API_KEY not found in environment variables');
     return;
   }
 
   try {
-    audioController.openaiService = new OpenAIRealtimeService({
-      apiKey,
-      model: 'gpt-realtime',
-    }, (response) => {
-      // Handle OpenAI responses and forward to connected clients
-      fastify.log.info('OpenAI Response:', response);
-      // Here we could broadcast to all connected WebSocket clients
-      // For now, just log the response
-    });
+    audioController.openaiService = new OpenAIRealtimeService(
+      {
+        apiKey,
+        model: 'gpt-4o-realtime-preview-2024-10-01',
+      },
+      (response) => {
+        // Handle OpenAI responses and forward to connected clients
+        fastify.log.info('OpenAI Response:', response);
+        // Here we could broadcast to all connected WebSocket clients
+        // For now, just log the response
+      }
+    );
 
     await audioController.openaiService.connect();
     fastify.log.info('OpenAI Realtime Service initialized successfully');
   } catch (error) {
-    fastify.log.error('Failed to initialize OpenAI Realtime Service:', error);
+    fastify.log.error(
+      { error },
+      'Failed to initialize OpenAI Realtime Service'
+    );
   }
 };
 
@@ -66,7 +72,7 @@ export const handleAudioMessage = async (
 
     reply.send({ success: true });
   } catch (error) {
-    fastify.log.error('Error handling audio message:', error);
+    request.log.error({ error }, 'Error handling audio message');
     reply.status(500).send({ error: 'Internal server error' });
   }
 };

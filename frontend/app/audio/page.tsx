@@ -20,11 +20,22 @@ export default function AudioPage() {
     const connectWebSocket = () => {
       try {
         setConnectionStatus('connecting');
-        const ws = new WebSocket('ws://localhost:3001/audio');
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'ws://localhost:3001';
+        const ws = new WebSocket(`${backendUrl}/api/audio/conversation`);
 
         ws.onopen = () => {
           setConnectionStatus('connected');
           setError(null);
+        };
+
+        ws.onmessage = event => {
+          // Handle WebSocket messages from backend
+          try {
+            JSON.parse(event.data);
+            // Process response data here if needed
+          } catch {
+            // Handle non-JSON messages
+          }
         };
 
         ws.onclose = () => {
@@ -68,9 +79,22 @@ export default function AudioPage() {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
         audioChunksRef.current = [];
 
-        // Send audio data via WebSocket
+        // Convert blob to base64 and send via WebSocket
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.send(audioBlob);
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64Audio = reader.result?.toString().split(',')[1]; // Remove data:audio/wav;base64, prefix
+            if (base64Audio) {
+              wsRef.current?.send(
+                JSON.stringify({
+                  type: 'audio',
+                  data: base64Audio,
+                  messageType: 'audio',
+                })
+              );
+            }
+          };
+          reader.readAsDataURL(audioBlob);
         }
       };
 

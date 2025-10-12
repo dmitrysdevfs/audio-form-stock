@@ -16,10 +16,20 @@ This module provides integration with OpenAI's Realtime API for audio processing
 
 ### 1. Environment Variables
 
-Create a `.env` file in the backend directory:
+**Backend** - Create a `.env` file in the backend directory:
 
 ```bash
 OPENAI_API_KEY=your_openai_api_key_here
+```
+
+**Frontend** - Create a `.env.local` file in the frontend directory:
+
+```bash
+# For production deployment (HTTPS requires WSS)
+NEXT_PUBLIC_BACKEND_URL=wss://your-backend-url.onrender.com
+
+# For local development (optional)
+# NEXT_PUBLIC_BACKEND_URL=ws://localhost:3001
 ```
 
 ### 2. Install Dependencies
@@ -28,7 +38,21 @@ OPENAI_API_KEY=your_openai_api_key_here
 npm install ws @types/ws
 ```
 
-### 3. Start the Server
+### 3. Configure Environment Variables
+
+**For Production Deployment:**
+
+1. **Vercel (Frontend)**: Add environment variable in Vercel dashboard:
+
+   ```   NEXT_PUBLIC_BACKEND_URL=wss://your-backend-url.onrender.com
+   ```
+
+2. **Render (Backend)**: Add environment variable in Render dashboard:
+
+   ```   OPENAI_API_KEY=your_openai_api_key_here
+   ```
+
+### 4. Start the Server
 
 ```bash
 npm run dev
@@ -38,41 +62,34 @@ npm run dev
 
 ### WebSocket Endpoints
 
-- `ws://localhost:3001/api/conversation` - Real-time conversation WebSocket
+- `ws://localhost:3001/api/audio/conversation` - Real-time conversation WebSocket
 
 ### REST Endpoints
 
-- `POST /api/audio/message` - Send audio data for processing
-- `GET /api/audio/status` - Check OpenAI service status
+- `POST /api/audio/audio/message` - Send audio data for processing
+- `GET /api/audio/audio/status` - Check OpenAI service status
 
 ## Usage
 
 ### Frontend Integration
 
 ```typescript
-// Connect to WebSocket
-const ws = new WebSocket('ws://localhost:3001/api/conversation');
-
-// Start conversation
-ws.send(JSON.stringify({
-  action: 'start'
-}));
+// Connect to WebSocket (uses environment variable)
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'ws://localhost:3001';
+const ws = new WebSocket(`${backendUrl}/api/audio/conversation`);
 
 // Send audio data
 ws.send(JSON.stringify({
-  messageType: 'audio',
-  audioData: audioBase64Data
+  type: 'audio',
+  data: audioBase64Data,
+  messageType: 'audio'
 }));
 
 // Send text message
 ws.send(JSON.stringify({
-  messageType: 'text',
-  audioData: 'Hello, how are you?'
-}));
-
-// Stop conversation
-ws.send(JSON.stringify({
-  action: 'stop'
+  type: 'text',
+  data: 'Hello, how are you?',
+  messageType: 'text'
 }));
 ```
 
