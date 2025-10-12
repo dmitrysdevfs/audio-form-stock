@@ -9,7 +9,7 @@ on:
 jobs:
   update-stocks:
     runs-on: ubuntu-latest
-    timeout-minutes: 300 # 5 hours max (safe margin)
+    timeout-minutes: 480 # 8 hours max (safe margin for 42 batches)
 
     steps:
       - name: Wake up Render server
@@ -23,7 +23,7 @@ jobs:
           echo "Starting optimized stock update process..."
           echo "Rate limit: 4 calls/minute (optimal balance)"
           echo "Data source: 30 days ago (monthly historical data) - Free plan compatible"
-          echo "Expected time: ~4 hours for all 330 symbols"
+          echo "Expected time: ~2.5 hours for all 330 symbols"
 
           # Function to process batch with retry logic
           process_batch() {
@@ -66,7 +66,7 @@ jobs:
           }
 
           # Process batches with optimized timing
-          total_batches=42  # 330 symbols / 8 per batch
+          total_batches=21  # 330 symbols / 16 per batch (reduced batches)
           failed_batches=()
 
           for batch in $(seq 1 $total_batches); do
@@ -76,11 +76,11 @@ jobs:
               failed_batches+=($batch)
             fi
             
-            # Optimized delay: 5 minutes between batches
+            # Optimized delay: 3 minutes between batches
             # This ensures we stay under the 4 calls/minute limit
             if [ $batch -lt $total_batches ]; then
-              echo "Waiting 5 minutes before next batch..."
-              sleep 300  # 5 minutes
+              echo "Waiting 3 minutes before next batch..."
+              sleep 180  # 3 minutes
             fi
           done
 
@@ -110,6 +110,6 @@ jobs:
           echo "Commit: ${{ github.sha }}"
           echo "Rate limit: 4 calls/minute (Optimal Balance)"
           echo "Data source: 30 days ago (monthly historical data)"
-          echo "Batch size: 8 symbols per batch"
-          echo "Total estimated time: ~4 hours"
+          echo "Batch size: 16 symbols per batch"
+          echo "Total estimated time: ~2.5 hours"
           echo "Status: ${{ job.status }}"

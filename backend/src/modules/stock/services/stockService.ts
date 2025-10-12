@@ -350,11 +350,17 @@ export class StockService {
    */
   async upsertStock(stockData: StockData): Promise<void> {
     try {
-      await this.fastify.mongo.db!.collection('stocks').replaceOne(
+      const now = new Date();
+      await this.fastify.mongo.db!.collection('stocks').updateOne(
         { symbol: stockData.symbol },
         {
-          ...stockData,
-          updatedAt: new Date(),
+          $set: {
+            ...stockData,
+            updatedAt: now,
+          },
+          $setOnInsert: {
+            createdAt: now,
+          },
         },
         { upsert: true }
       );
