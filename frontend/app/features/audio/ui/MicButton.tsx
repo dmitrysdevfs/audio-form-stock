@@ -12,6 +12,7 @@ interface MicButtonProps {
   color?: MicColor;
   disabled?: boolean;
   className?: string;
+  animationSize?: number;
 }
 
 export const MicButton = ({
@@ -22,9 +23,11 @@ export const MicButton = ({
   color = 'idle',
   disabled = false,
   className = '',
+  animationSize,
 }: MicButtonProps) => {
   const { button } = micSizes[size];
   const colorClass = isRecording ? micColors.active : micColors[color];
+  const animationSizeValue = animationSize || micSizes[size].animation;
 
   return (
     <Button
@@ -35,7 +38,11 @@ export const MicButton = ({
       radius="full"
       size="lg"
     >
-      <MicAnimationDotLottie isListening={isListening} size={micSizes[size].animation} />
+      <MicAnimationDotLottie
+        isListening={isListening}
+        size={animationSizeValue}
+        isActive={isRecording}
+      />
     </Button>
   );
 };

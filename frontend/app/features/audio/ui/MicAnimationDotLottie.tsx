@@ -9,6 +9,7 @@ interface MicAnimationDotLottieProps {
   size?: number;
   animationState?: MicAnimationState;
   className?: string;
+  isActive?: boolean;
 }
 
 export const MicAnimationDotLottie = ({
@@ -16,6 +17,7 @@ export const MicAnimationDotLottie = ({
   size = 70,
   animationState = 'idle',
   className = '',
+  isActive = false,
 }: MicAnimationDotLottieProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dotLottieRef = useRef<DotLottie | null>(null);
@@ -31,7 +33,7 @@ export const MicAnimationDotLottie = ({
       dotLottieRef.current = new DotLottie({
         canvas: canvasRef.current,
         src: '/animations/voice.lottie',
-        loop: isListening,
+        loop: true,
         autoplay: false,
       });
 
@@ -70,8 +72,25 @@ export const MicAnimationDotLottie = ({
       dotLottie.play();
     } else {
       dotLottie.pause();
+      // Reset to beginning by recreating the animation
+      setTimeout(() => {
+        if (dotLottieRef.current && canvasRef.current) {
+          dotLottieRef.current.destroy();
+          dotLottieRef.current = new DotLottie({
+            canvas: canvasRef.current,
+            src: '/animations/voice.lottie',
+            loop: true,
+            autoplay: false,
+          });
+          canvasRef.current.width = size;
+          canvasRef.current.height = size;
+          dotLottieRef.current.addEventListener('ready', () => {
+            setIsLoaded(true);
+          });
+        }
+      }, 50);
     }
-  }, [isListening, isLoaded, settings.speed]);
+  }, [isListening, isLoaded, settings.speed, settings.direction, size]);
 
   return (
     <div
@@ -83,6 +102,10 @@ export const MicAnimationDotLottie = ({
         style={{
           width: `${size}px`,
           height: `${size}px`,
+          filter: isActive
+            ? 'hue-rotate(0deg) saturate(2) brightness(1.2)'
+            : 'hue-rotate(0deg) saturate(1) brightness(1)',
+          transition: 'filter 0.3s ease-in-out',
         }}
       />
     </div>

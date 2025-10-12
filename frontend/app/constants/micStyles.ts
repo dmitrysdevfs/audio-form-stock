@@ -1,15 +1,15 @@
 export const micSizes = {
-  sm: { button: 'w-20 h-20', animation: 50 },
-  md: { button: 'w-24 h-24', animation: 70 },
-  lg: { button: 'w-32 h-32', animation: 90 },
-  xl: { button: 'w-40 h-40', animation: 110 },
+  sm: { button: 'w-16 h-16', animation: 110 },
+  md: { button: 'w-20 h-20', animation: 130 },
+  lg: { button: 'w-28 h-28', animation: 170 },
+  xl: { button: 'w-36 h-36', animation: 210 },
 } as const;
 
 export const micColors = {
-  active: 'bg-danger text-white shadow-danger-500/50',
-  idle: 'bg-purple-500 text-white shadow-purple-500/50',
-  success: 'bg-success text-white shadow-success-500/50',
-  warning: 'bg-warning text-white shadow-warning-500/50',
+  active: 'bg-transparent text-danger shadow-danger-500/50',
+  idle: 'bg-transparent text-purple-500 shadow-purple-500/50',
+  success: 'bg-transparent text-success shadow-success-500/50',
+  warning: 'bg-transparent text-warning shadow-warning-500/50',
 } as const;
 
 export const micAnimationSettings = {
