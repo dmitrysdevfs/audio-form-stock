@@ -151,9 +151,13 @@ export class OpenAIRealtimeService {
       throw new Error('Not connected to OpenAI Realtime API');
     }
 
+    // Send audio input event
     const message = {
-      type: 'audio',
-      data: audioData.toString('base64'),
+      type: 'conversation.item.input_audio_buffer.append',
+      item: {
+        type: 'input_audio_buffer',
+        audio: audioData.toString('base64'),
+      },
     };
 
     this.ws.send(JSON.stringify(message));
@@ -164,9 +168,49 @@ export class OpenAIRealtimeService {
       throw new Error('Not connected to OpenAI Realtime API');
     }
 
+    // Send text input event
     const message = {
-      type: 'text',
-      data: text,
+      type: 'conversation.item.create',
+      item: {
+        type: 'message',
+        role: 'user',
+        content: [
+          {
+            type: 'input_text',
+            text: text,
+          },
+        ],
+      },
+    };
+
+    this.ws.send(JSON.stringify(message));
+  }
+
+  startConversation(): void {
+    if (!this.isConnected || !this.ws) {
+      throw new Error('Not connected to OpenAI Realtime API');
+    }
+
+    // Start a new conversation
+    const message = {
+      type: 'conversation.item.create',
+      item: {
+        type: 'conversation',
+        title: 'New conversation',
+      },
+    };
+
+    this.ws.send(JSON.stringify(message));
+  }
+
+  stopConversation(): void {
+    if (!this.isConnected || !this.ws) {
+      throw new Error('Not connected to OpenAI Realtime API');
+    }
+
+    // Stop the current conversation
+    const message = {
+      type: 'conversation.item.input_audio_buffer.commit',
     };
 
     this.ws.send(JSON.stringify(message));

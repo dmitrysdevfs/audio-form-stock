@@ -53,16 +53,26 @@ npm run dev
 // Connect to WebSocket
 const ws = new WebSocket('ws://localhost:3001/api/conversation');
 
+// Start conversation
+ws.send(JSON.stringify({
+  action: 'start'
+}));
+
 // Send audio data
 ws.send(JSON.stringify({
-  type: 'audio',
-  data: audioBase64Data
+  messageType: 'audio',
+  audioData: audioBase64Data
 }));
 
 // Send text message
 ws.send(JSON.stringify({
-  type: 'text',
-  data: 'Hello, how are you?'
+  messageType: 'text',
+  audioData: 'Hello, how are you?'
+}));
+
+// Stop conversation
+ws.send(JSON.stringify({
+  action: 'stop'
 }));
 ```
 

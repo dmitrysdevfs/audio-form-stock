@@ -35,9 +35,10 @@ export const handleAudioMessage = async (
   reply: FastifyReply
 ) => {
   try {
-    const { audioData, messageType } = request.body as {
-      audioData: string;
-      messageType: 'audio' | 'text';
+    const { audioData, messageType, action } = request.body as {
+      audioData?: string;
+      messageType?: 'audio' | 'text';
+      action?: 'start' | 'stop';
     };
 
     if (!audioController.openaiService?.isReady()) {
@@ -46,7 +47,11 @@ export const handleAudioMessage = async (
       });
     }
 
-    if (messageType === 'audio' && audioData) {
+    if (action === 'start') {
+      audioController.openaiService.startConversation();
+    } else if (action === 'stop') {
+      audioController.openaiService.stopConversation();
+    } else if (messageType === 'audio' && audioData) {
       // Convert base64 audio to buffer
       const audioBuffer = Buffer.from(audioData, 'base64');
       audioController.openaiService.sendAudio(audioBuffer);
