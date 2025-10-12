@@ -9,54 +9,57 @@ import {
   TableCell,
   Pagination,
   Input,
+  Spinner,
+  Card,
+  CardBody,
 } from '@nextui-org/react';
-import { useState, useMemo, useEffect } from 'react';
-import { MOCK_STOCKS_DATA, type Stock } from '../api/MOCK_STOCKS_DATA';
+import { useState, useEffect } from 'react';
+import { useStocks } from '../hooks/useStocks';
 import { formatMarketCap, formatPrice, formatChangePercentage } from '../utils';
+import type { Stock } from '../api/stocks';
 
 const columns = [
   { key: 'index', label: '#' },
   { key: 'symbol', label: 'Symbol' },
   { key: 'name', label: 'Name' },
-  { key: 'marketCap', label: 'Capitalization' },
+  { key: 'marketCap', label: 'Capitalization ↓' },
   { key: 'price', label: 'Price' },
   { key: 'changesPercentage', label: 'Price change per day' },
   { key: 'monthlyChangesPercentage', label: 'Price change per month' },
 ];
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 20;
 
 export default function StockPage() {
-  const [stocks] = useState<Stock[]>(MOCK_STOCKS_DATA);
-  const [currentPage, setCurrentPage] = useState(1);
   const [countryFilter, setCountryFilter] = useState('');
   const [symbolFilter, setSymbolFilter] = useState('');
 
-  const filteredStocks = useMemo(() => {
-    return stocks.filter(stock => {
-      const matchesCountry =
-        !countryFilter || stock.country.toLowerCase().includes(countryFilter.toLowerCase());
-      const matchesSymbol =
-        !symbolFilter ||
-        stock.symbol.toLowerCase().includes(symbolFilter.toLowerCase()) ||
-        stock.name.toLowerCase().includes(symbolFilter.toLowerCase());
+  const { stocks, loading, error, total, page, setFilters, setPage } = useStocks();
 
-      return matchesCountry && matchesSymbol;
-    });
-  }, [stocks, countryFilter, symbolFilter]);
+  // Update filters when local state changes
+  useEffect(() => {
+    const newFilters: Record<string, string> = {};
+
+    if (countryFilter) {
+      newFilters.country = countryFilter;
+    }
+
+    if (symbolFilter) {
+      newFilters.search = symbolFilter;
+    }
+
+    // Only update if there are actual changes to avoid resetting sortBy/sortOrder
+    if (Object.keys(newFilters).length > 0) {
+      setFilters(newFilters);
+    }
+  }, [countryFilter, symbolFilter, setFilters]);
 
   // Reset to first page when filters change
   useEffect(() => {
-    setCurrentPage(1);
-  }, [countryFilter, symbolFilter]);
+    setPage(1);
+  }, [countryFilter, symbolFilter, setPage]);
 
-  const totalPages = Math.ceil(filteredStocks.length / ITEMS_PER_PAGE);
-
-  const paginatedStocks = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    return filteredStocks.slice(startIndex, endIndex);
-  }, [filteredStocks, currentPage]);
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   const renderCell = (stock: Stock, columnKey: string, index: number) => {
     switch (columnKey) {
@@ -119,6 +122,42 @@ export default function StockPage() {
     }
   };
 
+  // Show loading state
+  if (loading && stocks.length === 0) {
+    return (
+      <div className="min-h-[calc(100vh-12rem)] bg-background p-4 mt-48">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-center items-center min-h-[400px]">
+            <Card>
+              <CardBody className="flex flex-col items-center gap-4">
+                <Spinner size="lg" />
+                <p className="text-lg">Loading stock data...</p>
+              </CardBody>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-[calc(100vh-12rem)] bg-background p-4 mt-48">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-center items-center min-h-[400px]">
+            <Card>
+              <CardBody className="flex flex-col items-center gap-4">
+                <p className="text-lg text-danger">Error loading stock data</p>
+                <p className="text-sm text-default-500">{error}</p>
+              </CardBody>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[calc(100vh-12rem)] bg-background p-4 mt-48">
       <div className="max-w-7xl mx-auto">
@@ -160,16 +199,16 @@ export default function StockPage() {
               <TableColumn key={column.key}>{column.label}</TableColumn>
             ))}
           </TableHeader>
-          <TableBody emptyContent="No stocks found">
-            {paginatedStocks.map((stock, index) => (
-              <TableRow key={stock.id}>
+          <TableBody
+            emptyContent={loading ? 'Loading...' : 'No stocks found'}
+            loadingContent={<Spinner />}
+            isLoading={loading}
+          >
+            {stocks.map((stock, index) => (
+              <TableRow key={stock.symbol}>
                 {columnKey => (
                   <TableCell>
-                    {renderCell(
-                      stock,
-                      columnKey as string,
-                      (currentPage - 1) * ITEMS_PER_PAGE + index
-                    )}
+                    {renderCell(stock, columnKey as string, (page - 1) * ITEMS_PER_PAGE + index)}
                   </TableCell>
                 )}
               </TableRow>
@@ -180,8 +219,8 @@ export default function StockPage() {
         <div className="flex justify-center mt-6">
           <Pagination
             total={totalPages}
-            page={currentPage}
-            onChange={setCurrentPage}
+            page={page}
+            onChange={setPage}
             showControls
             showShadow
             color="primary"
