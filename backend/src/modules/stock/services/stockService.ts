@@ -201,24 +201,31 @@ export class StockService {
             `Processing ${ticker.ticker} (${i + 1}/${polygonTickers.length})`
           );
 
-          // Get current day data for price
-          const today = this.polygonService.getYesterdayDate();
-          const dailyData = await this.polygonService.getDailyData(
-            ticker.ticker,
-            today
-          );
+          // Get current and monthly data using grouped aggregates (safe for free plan)
+          const currentDate = this.polygonService.getDateNDaysAgo(2); // 2 days ago for "current" data
+          const monthlyDate = this.polygonService.getDateNDaysAgo(32); // 32 days ago for monthly comparison
 
-          // Get 30 days ago data for monthly calculation
-          const thirtyDaysAgo = this.polygonService.getDateNDaysAgo(30);
-          const monthlyData = await this.polygonService.getDailyData(
-            ticker.ticker,
-            thirtyDaysAgo
+          // Sequential requests to avoid rate limiting
+          const currentData =
+            await this.polygonService.getGroupedStocksAggregates(currentDate);
+          await this.delay(15000); // Wait 15 seconds between requests
+          const monthlyData =
+            await this.polygonService.getGroupedStocksAggregates(monthlyDate);
+
+          // Find current day data (open and close) and monthly close price
+          const currentTickerData = this.findTickerData(
+            currentData,
+            ticker.ticker
+          );
+          const monthlyClosePrice = this.findTickerPrice(
+            monthlyData,
+            ticker.ticker
           );
 
           const stockData = this.polygonService.convertToStockData(
             ticker,
-            dailyData || undefined,
-            monthlyData || undefined
+            currentTickerData, // Contains open and close for daily changes
+            { close: monthlyClosePrice } as any // Monthly close price
           );
 
           await this.upsertStock(stockData);
@@ -716,6 +723,27 @@ export class StockService {
 
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private findTickerPrice(groupedData: any, ticker: string): number {
+    if (!groupedData?.results) return 0;
+
+    const tickerData = groupedData.results.find(
+      (item: any) => item.T === ticker
+    );
+    return tickerData?.c || 0; // 'c' is close price
+  }
+
+  private findTickerData(groupedData: any, ticker: string): any {
+    if (!groupedData?.results) return { open: 0, close: 0 };
+
+    const tickerData = groupedData.results.find(
+      (item: any) => item.T === ticker
+    );
+    return {
+      open: tickerData?.o || 0, // 'o' is open price
+      close: tickerData?.c || 0, // 'c' is close price
+    };
   }
 
   private mapToStockData(doc: any): StockData {

@@ -63,6 +63,28 @@ export class PolygonService {
     }
   }
 
+  async getGroupedStocksAggregates(date: string): Promise<any> {
+    try {
+      // Use direct HTTP request since getGroupedDaily doesn't exist in the client
+      const apiKey = process.env.POLYGON_API_KEY;
+      const url = `https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/${date}?adjusted=true&apikey=${apiKey}`;
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error: any) {
+      console.error(
+        `Error fetching grouped stocks aggregates for ${date}:`,
+        error
+      );
+      throw error;
+    }
+  }
+
   async getTickersBatch(symbols: string[]): Promise<PolygonTickerDetails[]> {
     const results: PolygonTickerDetails[] = [];
     const startTime = Date.now();
