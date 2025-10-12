@@ -15,12 +15,16 @@ export class OpenAIRealtimeService {
   private ws: WebSocket | null = null;
   private config: OpenAIRealtimeConfig;
   private isConnected = false;
+  private onResponse?: (response: any) => void;
 
-  constructor(config: OpenAIRealtimeConfig) {
+  constructor(config: OpenAIRealtimeConfig, onResponse?: (response: any) => void) {
     this.config = {
       model: 'gpt-realtime',
       ...config,
     };
+    if (onResponse) {
+      this.onResponse = onResponse;
+    }
   }
 
   async connect(): Promise<void> {
@@ -122,21 +126,50 @@ export class OpenAIRealtimeService {
         break;
       case 'conversation.item.input_audio_buffer.transcript':
         console.log('Transcript:', message.transcript);
+        // Send transcript to frontend
+        this.onResponse?.({
+          type: 'transcript',
+          text: message.transcript,
+          timestamp: new Date().toISOString(),
+        });
         break;
       case 'conversation.item.response.output_audio_buffer.committed':
         console.log('Audio output committed');
+        this.onResponse?.({
+          type: 'audio_committed',
+          timestamp: new Date().toISOString(),
+        });
         break;
       case 'conversation.item.response.output_audio_buffer.audio':
         console.log('Audio output received');
+        this.onResponse?.({
+          type: 'audio_delta',
+          audio: message.audio,
+          timestamp: new Date().toISOString(),
+        });
         break;
       case 'conversation.item.response.output_audio_buffer.done':
         console.log('Audio output completed');
+        this.onResponse?.({
+          type: 'audio_done',
+          timestamp: new Date().toISOString(),
+        });
         break;
       case 'conversation.item.response.content':
         console.log('Response content:', message.content);
+        this.onResponse?.({
+          type: 'text_delta',
+          text: message.content,
+          timestamp: new Date().toISOString(),
+        });
         break;
       case 'conversation.item.response.done':
         console.log('Response completed');
+        this.onResponse?.({
+          type: 'text_done',
+          text: message.content,
+          timestamp: new Date().toISOString(),
+        });
         break;
       case 'error':
         console.error('OpenAI Error:', message.error);

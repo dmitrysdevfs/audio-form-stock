@@ -21,6 +21,11 @@ export const initializeAudioController = async (fastify: FastifyInstance) => {
     audioController.openaiService = new OpenAIRealtimeService({
       apiKey,
       model: 'gpt-realtime',
+    }, (response) => {
+      // Handle OpenAI responses and forward to connected clients
+      fastify.log.info('OpenAI Response:', response);
+      // Here we could broadcast to all connected WebSocket clients
+      // For now, just log the response
     });
 
     await audioController.openaiService.connect();
@@ -71,7 +76,7 @@ export const getAudioStatus = async (
   reply: FastifyReply
 ) => {
   const isReady = audioController.openaiService?.isReady() || false;
-  
+
   reply.send({
     connected: isReady,
     service: 'OpenAI Realtime API',
