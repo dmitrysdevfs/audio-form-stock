@@ -6,18 +6,12 @@ import testPolygonRoutes from './testPolygon.js';
 import testPolygonOfficialRoutes from './testPolygonOfficial.js';
 import { formRoutes } from '../modules/form/index.js';
 import { stockRoutes } from '../modules/stock/index.js';
+import audioModule from '../modules/audio/index.js';
 
-/**
- * Main routes registration
- * @param {import('fastify').FastifyInstance} fastify Fastify instance
- */
 const routes: FastifyPluginAsync = async (fastify) => {
-  // Basic route
   fastify.get('/', async () => {
     return { hello: 'world' };
   });
-
-  // Register sub-routes
   fastify.register(healthRoutes);
   fastify.register(testMongoRoutes);
   fastify.register(testStockRoutes);
@@ -27,6 +21,7 @@ const routes: FastifyPluginAsync = async (fastify) => {
   });
   fastify.register(formRoutes, { prefix: '/api/form' });
   fastify.register(stockRoutes);
+  fastify.register(audioModule, { prefix: '/api' });
 };
 
 export default routes;
