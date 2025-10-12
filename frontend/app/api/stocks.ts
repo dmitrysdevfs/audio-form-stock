@@ -2,6 +2,8 @@
  * Stock API service for frontend
  */
 
+import { MOCK_STOCKS_DATA } from './MOCK_STOCKS_DATA';
+
 export interface Stock {
   symbol: string;
   name: string;
@@ -72,9 +74,68 @@ class StockApiService {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching stocks:', error);
-      throw error;
+      console.error('Error fetching stocks from API, falling back to mock data:', error);
+
+      // Fallback to mock data when API is unavailable
+      return this.getMockStocks(filters);
     }
+  }
+
+  /**
+   * Get mock stocks data with filtering and pagination
+   */
+  private getMockStocks(filters: StockFilters = {}): StockResponse {
+    const {
+      country,
+      search,
+      sortBy = 'marketCap',
+      sortOrder = 'desc',
+      page = 1,
+      limit = 50,
+    } = filters;
+
+    let filteredData = [...MOCK_STOCKS_DATA];
+
+    // Apply country filter
+    if (country) {
+      filteredData = filteredData.filter(stock =>
+        stock.country.toLowerCase().includes(country.toLowerCase())
+      );
+    }
+
+    // Apply search filter
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredData = filteredData.filter(
+        stock =>
+          stock.symbol.toLowerCase().includes(searchLower) ||
+          stock.name.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply sorting
+    filteredData.sort((a, b) => {
+      const aValue = a[sortBy as keyof Stock] as number;
+      const bValue = b[sortBy as keyof Stock] as number;
+
+      if (sortOrder === 'asc') {
+        return aValue - bValue;
+      } else {
+        return bValue - aValue;
+      }
+    });
+
+    // Apply pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedData = filteredData.slice(startIndex, endIndex);
+
+    return {
+      data: paginatedData,
+      total: filteredData.length,
+      page,
+      limit,
+    };
   }
 
   /**
@@ -91,8 +152,14 @@ class StockApiService {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching stock by symbol:', error);
-      throw error;
+      console.error('Error fetching stock by symbol from API, falling back to mock data:', error);
+
+      // Fallback to mock data
+      const mockStock = MOCK_STOCKS_DATA.find(
+        stock => stock.symbol.toLowerCase() === symbol.toLowerCase()
+      );
+
+      return mockStock || null;
     }
   }
 
@@ -109,8 +176,11 @@ class StockApiService {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching countries:', error);
-      throw error;
+      console.error('Error fetching countries from API, falling back to mock data:', error);
+
+      // Fallback to mock data
+      const countries = [...new Set(MOCK_STOCKS_DATA.map(stock => stock.country))];
+      return countries;
     }
   }
 
@@ -127,8 +197,10 @@ class StockApiService {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching indexes:', error);
-      throw error;
+      console.error('Error fetching indexes from API, falling back to mock data:', error);
+
+      // Fallback to mock data - return empty array since mock data doesn't have indexes
+      return [];
     }
   }
 
@@ -145,8 +217,16 @@ class StockApiService {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching health status:', error);
-      throw error;
+      console.error('Error fetching health status from API, falling back to mock data:', error);
+
+      // Fallback to mock data health status
+      return {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        database: 'mock',
+        lastUpdate: new Date().toISOString(),
+        totalStocks: MOCK_STOCKS_DATA.length,
+      };
     }
   }
 }

@@ -9,7 +9,8 @@ export interface Stock {
   changesPercentage: number;
   monthlyChanges: number;
   monthlyChangesPercentage: number;
-  lastUpdated: Date;
+  indexes: string[];
+  lastUpdated: string;
 }
 
 export const MOCK_STOCKS_DATA: Stock[] = [
@@ -24,7 +25,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: 1.45,
     monthlyChanges: 8.25,
     monthlyChangesPercentage: 5.82,
-    lastUpdated: new Date(),
+    indexes: ['NASDAQ', 'S&P500'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'MSFT',
@@ -37,7 +39,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: -0.33,
     monthlyChanges: -5.8,
     monthlyChangesPercentage: -1.52,
-    lastUpdated: new Date(),
+    indexes: ['NASDAQ', 'S&P500'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'GOOGL',
@@ -50,7 +53,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: 0.67,
     monthlyChanges: 4.2,
     monthlyChangesPercentage: 3.03,
-    lastUpdated: new Date(),
+    indexes: ['NASDAQ', 'S&P500'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'AMZN',
@@ -63,7 +67,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: -1.33,
     monthlyChanges: -8.5,
     monthlyChangesPercentage: -5.19,
-    lastUpdated: new Date(),
+    indexes: ['NASDAQ', 'S&P500'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'TSLA',
@@ -76,7 +81,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: 2.16,
     monthlyChanges: 15.8,
     monthlyChangesPercentage: 6.87,
-    lastUpdated: new Date(),
+    indexes: ['NASDAQ', 'S&P500'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'NVDA',
@@ -89,7 +95,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: 2.6,
     monthlyChanges: 45.2,
     monthlyChangesPercentage: 10.26,
-    lastUpdated: new Date(),
+    indexes: ['NASDAQ', 'S&P500'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'META',
@@ -102,7 +109,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: -0.97,
     monthlyChanges: -12.5,
     monthlyChangesPercentage: -3.75,
-    lastUpdated: new Date(),
+    indexes: ['NASDAQ', 'S&P500'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'NFLX',
@@ -115,7 +123,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: 0.38,
     monthlyChanges: 8.5,
     monthlyChangesPercentage: 1.78,
-    lastUpdated: new Date(),
+    indexes: ['NASDAQ', 'S&P500'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'AMD',
@@ -128,7 +137,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: 1.8,
     monthlyChanges: 12.3,
     monthlyChangesPercentage: 8.6,
-    lastUpdated: new Date(),
+    indexes: ['NASDAQ', 'S&P500'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'INTC',
@@ -141,7 +151,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: -1.85,
     monthlyChanges: -3.2,
     monthlyChangesPercentage: -6.6,
-    lastUpdated: new Date(),
+    indexes: ['NASDAQ', 'S&P500'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'CRM',
@@ -154,7 +165,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: 0.53,
     monthlyChanges: 5.8,
     monthlyChangesPercentage: 2.64,
-    lastUpdated: new Date(),
+    indexes: ['NYSE', 'S&P500'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'ADBE',
@@ -167,7 +179,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: -0.73,
     monthlyChanges: -15.2,
     monthlyChangesPercentage: -2.55,
-    lastUpdated: new Date(),
+    indexes: ['NASDAQ', 'S&P500'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'ORCL',
@@ -180,7 +193,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: 0.83,
     monthlyChanges: 3.8,
     monthlyChangesPercentage: 3.39,
-    lastUpdated: new Date(),
+    indexes: ['NYSE', 'S&P500'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'ASML',
@@ -193,7 +207,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: 0.95,
     monthlyChanges: 25.8,
     monthlyChangesPercentage: 3.04,
-    lastUpdated: new Date(),
+    indexes: ['AEX'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'SAP',
@@ -206,7 +221,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: -0.92,
     monthlyChanges: -5.2,
     monthlyChangesPercentage: -3.23,
-    lastUpdated: new Date(),
+    indexes: ['DAX'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'NOVN.SW',
@@ -219,7 +235,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: 0.79,
     monthlyChanges: 2.8,
     monthlyChangesPercentage: 3.02,
-    lastUpdated: new Date(),
+    indexes: ['SMI'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'NESN.SW',
@@ -232,7 +249,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: -0.73,
     monthlyChanges: -2.5,
     monthlyChangesPercentage: -2.12,
-    lastUpdated: new Date(),
+    indexes: ['SMI'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'TSM',
@@ -245,7 +263,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: 2.08,
     monthlyChanges: 8.5,
     monthlyChangesPercentage: 8.74,
-    lastUpdated: new Date(),
+    indexes: ['TWSE'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'BABA',
@@ -258,7 +277,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: -1.44,
     monthlyChanges: -5.8,
     monthlyChangesPercentage: -6.35,
-    lastUpdated: new Date(),
+    indexes: ['NYSE'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'JD',
@@ -271,7 +291,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: 1.59,
     monthlyChanges: 1.8,
     monthlyChangesPercentage: 6.67,
-    lastUpdated: new Date(),
+    indexes: ['NASDAQ'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'NIO',
@@ -284,7 +305,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: -1.79,
     monthlyChanges: -0.8,
     monthlyChangesPercentage: -8.84,
-    lastUpdated: new Date(),
+    indexes: ['NYSE'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'XPEV',
@@ -297,7 +319,8 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: 2.9,
     monthlyChanges: 1.5,
     monthlyChangesPercentage: 13.76,
-    lastUpdated: new Date(),
+    indexes: ['NYSE'],
+    lastUpdated: new Date().toISOString(),
   },
   {
     id: 'LI',
@@ -310,6 +333,7 @@ export const MOCK_STOCKS_DATA: Stock[] = [
     changesPercentage: 4.71,
     monthlyChanges: 3.2,
     monthlyChangesPercentage: 20.37,
-    lastUpdated: new Date(),
+    indexes: ['NASDAQ'],
+    lastUpdated: new Date().toISOString(),
   },
 ];
