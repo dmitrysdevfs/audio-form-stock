@@ -16,13 +16,14 @@ export class OpenAIRealtimeService {
   private config: OpenAIRealtimeConfig;
   private isConnected = false;
   private onResponse?: (response: any) => void;
+  private audioBufferSize = 0; // Track current buffer size
 
   constructor(
     config: OpenAIRealtimeConfig,
     onResponse?: (response: any) => void
   ) {
     this.config = {
-      model: 'gpt-4o-realtime-preview-2024-10-01',
+      model: 'gpt-realtime',
       ...config,
     };
     if (onResponse) {
@@ -75,14 +76,37 @@ export class OpenAIRealtimeService {
   private initializeSession(): void {
     if (!this.ws) return;
 
-    // Send session update event
+    // Send session update event according to official documentation
     this.ws.send(
       JSON.stringify({
         type: 'session.update',
         session: {
           type: 'realtime',
+          model: 'gpt-realtime',
           instructions:
             'You are a helpful AI assistant. Respond naturally to audio input and provide helpful responses.',
+          output_modalities: ['text', 'audio'],
+          audio: {
+            input: {
+              format: {
+                type: 'audio/pcm',
+                rate: 24000,
+              },
+              turn_detection: {
+                type: 'server_vad',
+                threshold: 0.5,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 500,
+              },
+            },
+            output: {
+              format: {
+                type: 'audio/pcm',
+                rate: 24000,
+              },
+              voice: 'alloy',
+            },
+          },
           tools: [],
           tool_choice: 'auto',
         },
@@ -91,28 +115,43 @@ export class OpenAIRealtimeService {
   }
 
   private handleMessage(message: any): void {
+    console.log('OpenAI Realtime API message received:', message.type);
+    console.log('Full message:', JSON.stringify(message, null, 2));
+
     // Handle different message types from OpenAI Realtime API
     switch (message.type) {
       case 'session.created':
-        // Session created successfully
+        console.log('Session created successfully');
         break;
       case 'session.updated':
-        // Session updated successfully
+        console.log('Session updated successfully');
         break;
       case 'conversation.item.input_audio_buffer.committed':
-        // Audio input committed
+        console.log('Audio input committed');
         break;
       case 'conversation.item.input_audio_buffer.speech_started':
-        // Speech started
+        console.log('Speech started');
         break;
       case 'conversation.item.input_audio_buffer.speech_stopped':
-        // Speech stopped
+        console.log('Speech stopped');
         break;
       case 'conversation.item.input_audio_buffer.transcript':
+        console.log('Speech transcript received:', message.transcript);
         // Send transcript to frontend
         this.onResponse?.({
-          type: 'transcript',
-          text: message.transcript,
+          type: 'openai_response',
+          data: {
+            type: 'conversation.item.input_audio_buffer.transcript',
+            transcript: message.transcript,
+          },
+        });
+        break;
+      case 'input_audio_buffer.committed':
+        console.log('Audio buffer committed successfully');
+        // Reset buffer size after successful commit
+        this.audioBufferSize = 0;
+        this.onResponse?.({
+          type: 'audio_committed',
           timestamp: new Date().toISOString(),
         });
         break;
@@ -122,35 +161,65 @@ export class OpenAIRealtimeService {
           timestamp: new Date().toISOString(),
         });
         break;
-      case 'conversation.item.response.output_audio_buffer.audio':
+      case 'conversation.item.response.output_audio.delta':
         this.onResponse?.({
-          type: 'audio_delta',
-          audio: message.audio,
-          timestamp: new Date().toISOString(),
+          type: 'openai_response',
+          data: {
+            type: 'conversation.item.response.output_audio.delta',
+            audio: message.delta,
+          },
         });
         break;
-      case 'conversation.item.response.output_audio_buffer.done':
+      case 'conversation.item.response.output_audio.done':
         this.onResponse?.({
-          type: 'audio_done',
-          timestamp: new Date().toISOString(),
+          type: 'openai_response',
+          data: {
+            type: 'conversation.item.response.output_audio.done',
+          },
         });
         break;
-      case 'conversation.item.response.content':
+      case 'conversation.item.response.output_text.delta':
         this.onResponse?.({
-          type: 'text_delta',
-          text: message.content,
-          timestamp: new Date().toISOString(),
+          type: 'openai_response',
+          data: {
+            type: 'conversation.item.response.output_text.delta',
+            text: message.delta,
+          },
         });
         break;
-      case 'conversation.item.response.done':
+      case 'conversation.item.response.output_text.done':
         this.onResponse?.({
-          type: 'text_done',
-          text: message.content,
-          timestamp: new Date().toISOString(),
+          type: 'openai_response',
+          data: {
+            type: 'conversation.item.response.output_text.done',
+          },
         });
         break;
       case 'error':
-        // Handle OpenAI errors
+        console.error('OpenAI Error:', message);
+        this.onResponse?.({
+          type: 'error',
+          message:
+            message.error?.message || message.message || 'Unknown OpenAI error',
+          timestamp: new Date().toISOString(),
+        });
+        break;
+      case 'response.done':
+        if (message.response?.status === 'failed') {
+          console.error(
+            'OpenAI Response Failed:',
+            message.response.status_details
+          );
+          this.onResponse?.({
+            type: 'error',
+            message:
+              message.response.status_details?.error?.message ||
+              'Response failed',
+            timestamp: new Date().toISOString(),
+          });
+        } else {
+          console.log('OpenAI Response completed successfully');
+        }
         break;
       default:
       // Unknown message type
@@ -162,16 +231,77 @@ export class OpenAIRealtimeService {
       throw new Error('Not connected to OpenAI Realtime API');
     }
 
-    // Send audio input event
+    console.log('Sending audio to OpenAI Realtime API:', {
+      audioSize: audioData.length,
+      wsReadyState: this.ws.readyState,
+      isConnected: this.isConnected,
+    });
+
+    // Send audio input event with base64 encoded audio
     const message = {
-      type: 'conversation.item.input_audio_buffer.append',
-      item: {
-        type: 'input_audio_buffer',
-        audio: audioData.toString('base64'),
-      },
+      type: 'input_audio_buffer.append',
+      audio: audioData.toString('base64'), // Convert to base64
     };
 
     this.ws.send(JSON.stringify(message));
+    console.log('Audio message sent to OpenAI');
+  }
+
+  sendRawAudio(audioData: Buffer): void {
+    if (!this.isConnected || !this.ws) {
+      throw new Error('Not connected to OpenAI Realtime API');
+    }
+
+    // Check minimum audio length (100ms = 4800 bytes for PCM16 mono 24kHz)
+    const minAudioLength = 4800; // 100ms * 24kHz * 2 bytes
+    if (audioData.length < minAudioLength) {
+      console.warn(
+        `Audio too short: ${audioData.length} bytes (minimum ${minAudioLength} bytes for 100ms)`
+      );
+      return;
+    }
+
+    console.log('Sending raw audio to OpenAI Realtime API:', {
+      audioSize: audioData.length,
+      currentBufferSize: this.audioBufferSize,
+      minRequired: minAudioLength,
+      duration: `${((audioData.length / 48000) * 1000).toFixed(1)}ms`,
+      wsReadyState: this.ws.readyState,
+      isConnected: this.isConnected,
+    });
+
+    // OpenAI Realtime API expects base64 encoded audio
+    const message = {
+      type: 'input_audio_buffer.append',
+      audio: audioData.toString('base64'), // Convert to base64
+    };
+
+    this.ws.send(JSON.stringify(message));
+    console.log('Raw audio message sent to OpenAI');
+
+    // Update buffer size tracking
+    this.audioBufferSize += audioData.length;
+
+    // Validate buffer size before commit
+    if (this.audioBufferSize < minAudioLength) {
+      console.warn(
+        `Buffer too small for commit: ${this.audioBufferSize} bytes (minimum ${minAudioLength} bytes)`
+      );
+      return;
+    }
+
+    // Commit the audio buffer to trigger processing
+    const commitMessage = {
+      type: 'input_audio_buffer.commit',
+    };
+
+    this.ws.send(JSON.stringify(commitMessage));
+    console.log('Audio buffer committed to OpenAI');
+
+    // Wait a bit to see if we get a response
+    setTimeout(() => {
+      console.log('Checking for OpenAI response after 2 seconds...');
+    }, 2000);
   }
 
   sendText(text: string): void {
@@ -202,16 +332,9 @@ export class OpenAIRealtimeService {
       throw new Error('Not connected to OpenAI Realtime API');
     }
 
-    // Start a new conversation
-    const message = {
-      type: 'conversation.item.create',
-      item: {
-        type: 'conversation',
-        title: 'New conversation',
-      },
-    };
-
-    this.ws.send(JSON.stringify(message));
+    // No need to create conversation - session is already created
+    // Just start sending audio directly
+    console.log('Conversation ready - can start sending audio');
   }
 
   stopConversation(): void {

@@ -1,12 +1,18 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import OpenAIRealtimeService from '../services/openaiService.js';
+// import TranscriptionService from '../services/transcriptionService.js'; // Removed - not compatible with Realtime API
+import { EphemeralKeyService } from '../services/ephemeralKeyService.js';
 
 interface AudioController {
   openaiService: OpenAIRealtimeService | null;
+  transcriptionService: null; // Removed - not compatible with Realtime API
+  activeConnections: Set<any>;
 }
 
 const audioController: AudioController = {
   openaiService: null,
+  transcriptionService: null, // Removed - not compatible with Realtime API
+  activeConnections: new Set(),
 };
 
 export const initializeAudioController = async (fastify: FastifyInstance) => {
@@ -17,22 +23,49 @@ export const initializeAudioController = async (fastify: FastifyInstance) => {
     return;
   }
 
+  fastify.log.info('OpenAI API Key found, initializing service...');
+
   try {
     audioController.openaiService = new OpenAIRealtimeService(
       {
         apiKey,
-        model: 'gpt-4o-realtime-preview-2024-10-01',
+        model: 'gpt-realtime',
       },
       (response) => {
         // Handle OpenAI responses and forward to connected clients
-        fastify.log.info('OpenAI Response:', response);
-        // Here we could broadcast to all connected WebSocket clients
-        // For now, just log the response
+        fastify.log.info({ response }, 'OpenAI Response received');
+        fastify.log.info(
+          `Active connections: ${audioController.activeConnections.size}`
+        );
+
+        // Broadcast response to all active WebSocket connections
+        audioController.activeConnections.forEach((connection) => {
+          try {
+            fastify.log.info('Sending response to client');
+            connection.send(
+              JSON.stringify({
+                type: 'openai_response',
+                data: response,
+                timestamp: new Date().toISOString(),
+              })
+            );
+          } catch (error) {
+            fastify.log.error({ error }, 'Error sending response to client');
+            // Remove broken connection
+            audioController.activeConnections.delete(connection);
+          }
+        });
       }
     );
 
     await audioController.openaiService.connect();
     fastify.log.info('OpenAI Realtime Service initialized successfully');
+    fastify.log.info(
+      `OpenAI service ready: ${audioController.openaiService.isReady()}`
+    );
+
+    // Note: TranscriptionService removed - Whisper API doesn't work with Realtime WebSocket
+    // For transcription, use OpenAI Realtime API with text output modality
   } catch (error) {
     fastify.log.error(
       { error },
@@ -86,7 +119,16 @@ export const getAudioStatus = async (
   reply.send({
     connected: isReady,
     service: 'OpenAI Realtime API',
+    activeConnections: audioController.activeConnections.size,
   });
+};
+
+export const addConnection = (connection: any) => {
+  audioController.activeConnections.add(connection);
+};
+
+export const removeConnection = (connection: any) => {
+  audioController.activeConnections.delete(connection);
 };
 
 export default audioController;

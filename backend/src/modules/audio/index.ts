@@ -6,6 +6,6 @@ import audioRoutes from './routes/audioRoutes.js';
  * Handles real-time audio conversation functionality
  */
 export default async function audioModule(fastify: FastifyInstance) {
-  // Register audio routes
-  await fastify.register(audioRoutes, { prefix: '/audio' });
+  // Register audio routes without prefix (already has /api prefix)
+  await fastify.register(audioRoutes);
 }
