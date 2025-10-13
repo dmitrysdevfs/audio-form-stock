@@ -1,4 +1,4 @@
-name: Daily Stock Update (Optimized - 4 calls/minute)
+name: Daily Stock Update (Idempotent)
 
 on:
   schedule:
@@ -9,36 +9,40 @@ on:
 jobs:
   update-stocks:
     runs-on: ubuntu-latest
-    timeout-minutes: 480 # 8 hours max (safe margin for 42 batches)
+    timeout-minutes: 480 # 8 hours max
 
     steps:
       - name: Wake up Render server
         run: |
           echo "Waking up Render server..."
           curl -f ${{ secrets.RENDER_URL }}/api/stocks/health || echo "Server might be sleeping, continuing..."
-          sleep 10
+          sleep 30  # Increased wait time for server warmup
 
-      - name: Update stocks with optimized processing
+      - name: Update stocks with idempotent processing
         run: |
-          echo "Starting optimized stock update process..."
-          echo "Rate limit: 4 calls/minute (optimal balance)"
-          echo "Data source: 30 days ago (monthly historical data) - Free plan compatible"
+          echo "Starting idempotent stock update process..."
+          echo "Rate limit: 2 calls/minute (free plan safe)"
+          echo "Data source: 2 days ago (last completed trading day) - Free plan compatible"
           echo "Expected time: ~2.5 hours for all 330 symbols"
+          echo "Idempotency: Prevents duplicate processing on retry"
 
-          # Function to process batch with retry logic
+          # Function to process batch with idempotent retry logic
           process_batch() {
             local batch_num=$1
             local total_batches=$2
-            local max_retries=3
+            local max_retries=2  # Reduced retries
             local retry_count=0
             
             while [ $retry_count -lt $max_retries ]; do
               echo "Processing batch $batch_num of $total_batches (attempt $((retry_count + 1)))"
               
+              # Generate unique request ID for idempotency
+              local request_id="batch_${batch_num}_$(date +%s)_${retry_count}"
+              
               response=$(curl -s -w "%{http_code}" -X POST ${{ secrets.RENDER_URL }}/api/stocks/update \
                 -H "Content-Type: application/json" \
-                -d "{\"batchNumber\": $batch_num, \"totalBatches\": $total_batches}" \
-                --max-time 600)  # 10 minutes timeout per batch
+                -d "{\"batchNumber\": $batch_num, \"totalBatches\": $total_batches, \"requestId\": \"$request_id\"}" \
+                --max-time 300)  # 5 minutes timeout per batch
               
               http_code="${response: -3}"
               response_body="${response%???}"
@@ -48,10 +52,20 @@ jobs:
               if [ "$http_code" = "200" ]; then
                 echo "SUCCESS: Batch $batch_num completed successfully"
                 echo "$response_body" | jq -r '.message // "No message"'
+                
+                # Check if batch was already processing (idempotent response)
+                if echo "$response_body" | jq -e '.message | contains("already processing")' > /dev/null; then
+                  echo "INFO: Batch $batch_num was already processing (idempotent)"
+                fi
+                
                 return 0
+              elif [ "$http_code" = "000" ]; then
+                echo "NETWORK ERROR: Connection failed for batch $batch_num, retrying..."
+                retry_count=$((retry_count + 1))
+                sleep 60  # Wait 1 minute before retry
               elif [ "$http_code" = "429" ]; then
                 echo "RATE LIMIT: Rate limit hit for batch $batch_num, waiting 90 seconds..."
-                sleep 90  # Wait 90 seconds for rate limit
+                sleep 90
                 retry_count=$((retry_count + 1))
               else
                 echo "ERROR: Error processing batch $batch_num: HTTP $http_code"
@@ -65,8 +79,8 @@ jobs:
             return 1
           }
 
-          # Process batches with optimized timing
-          total_batches=21  # 330 symbols / 16 per batch (reduced batches)
+          # Process batches with idempotent timing
+          total_batches=21  # 330 symbols / 16 per batch
           failed_batches=()
 
           for batch in $(seq 1 $total_batches); do
@@ -77,7 +91,6 @@ jobs:
             fi
             
             # Optimized delay: 3 minutes between batches
-            # This ensures we stay under the 4 calls/minute limit
             if [ $batch -lt $total_batches ]; then
               echo "Waiting 3 minutes before next batch..."
               sleep 180  # 3 minutes
@@ -108,8 +121,9 @@ jobs:
           echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "Repository: ${{ github.repository }}"
           echo "Commit: ${{ github.sha }}"
-          echo "Rate limit: 4 calls/minute (Optimal Balance)"
-          echo "Data source: 30 days ago (monthly historical data)"
+          echo "Rate limit: 2 calls/minute (Free Plan Safe)"
+          echo "Data source: 2 days ago (last completed trading day)"
           echo "Batch size: 16 symbols per batch"
           echo "Total estimated time: ~2.5 hours"
+          echo "Idempotency: Enabled (prevents duplicate processing)"
           echo "Status: ${{ job.status }}"

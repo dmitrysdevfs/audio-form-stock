@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { StockService } from '../services/stockService.js';
+import { ScheduleService } from '../services/scheduleService.js';
 import { StockFilters, StockUpdateRequest } from '../types/index.js';
 
 /**
@@ -7,9 +8,11 @@ import { StockFilters, StockUpdateRequest } from '../types/index.js';
  */
 export class StockController {
   private stockService: StockService;
+  private scheduleService: ScheduleService;
 
   constructor(fastify: any) {
     this.stockService = new StockService(fastify);
+    this.scheduleService = new ScheduleService();
   }
 
   /**
@@ -186,6 +189,117 @@ export class StockController {
       return reply.status(500).send({
         success: false,
         message: 'Polygon.io integration test failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * GET /api/stocks/schedule - Get update schedule information
+   */
+  async getSchedule(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const schedule = this.scheduleService.getUpdateSchedule();
+
+      return reply.send({
+        success: true,
+        data: schedule,
+      });
+    } catch (error) {
+      console.error('Error in getSchedule:', error);
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to get schedule information',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * GET /api/stocks/schedule/detailed - Get detailed schedule and timezone information
+   */
+  async getDetailedSchedule(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const detailedInfo = this.scheduleService.getDetailedInfo();
+
+      return reply.send({
+        success: true,
+        data: detailedInfo,
+      });
+    } catch (error) {
+      console.error('Error in getDetailedSchedule:', error);
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to get detailed schedule information',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * GET /api/stocks/schedule/batch - Get batch processing schedule
+   */
+  async getBatchSchedule(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const { totalBatches } = request.query as { totalBatches?: string };
+      const batches = totalBatches ? parseInt(totalBatches) : 10;
+
+      const batchSchedule = this.scheduleService.getBatchSchedule(batches);
+
+      return reply.send({
+        success: true,
+        data: batchSchedule,
+      });
+    } catch (error) {
+      console.error('Error in getBatchSchedule:', error);
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to get batch schedule',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * GET /api/stocks/schedule/check - Check if update should be performed
+   */
+  async checkUpdateStatus(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const { forceUpdate } = request.query as { forceUpdate?: string };
+      const force = forceUpdate === 'true';
+
+      const updateStatus = this.scheduleService.shouldUpdateNow(force);
+
+      return reply.send({
+        success: true,
+        data: updateStatus,
+      });
+    } catch (error) {
+      console.error('Error in checkUpdateStatus:', error);
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to check update status',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * GET /api/stocks/schedule/log - Log comprehensive schedule information
+   */
+  async logScheduleInfo(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      this.scheduleService.logScheduleInfo();
+
+      return reply.send({
+        success: true,
+        message: 'Schedule information logged to console',
+      });
+    } catch (error) {
+      console.error('Error in logScheduleInfo:', error);
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to log schedule information',
         error: error instanceof Error ? error.message : 'Unknown error',
       });
     }

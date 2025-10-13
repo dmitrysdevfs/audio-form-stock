@@ -51,6 +51,32 @@ const stockRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   fastify.get('/test-polygon', {
     handler: stockController.testPolygonIntegration.bind(stockController),
   });
+
+  // Schedule-related routes
+  // GET /api/stocks/schedule - Get update schedule information
+  fastify.get('/schedule', {
+    handler: stockController.getSchedule.bind(stockController),
+  });
+
+  // GET /api/stocks/schedule/detailed - Get detailed schedule and timezone information
+  fastify.get('/schedule/detailed', {
+    handler: stockController.getDetailedSchedule.bind(stockController),
+  });
+
+  // GET /api/stocks/schedule/batch - Get batch processing schedule
+  fastify.get('/schedule/batch', {
+    handler: stockController.getBatchSchedule.bind(stockController),
+  });
+
+  // GET /api/stocks/schedule/check - Check if update should be performed
+  fastify.get('/schedule/check', {
+    handler: stockController.checkUpdateStatus.bind(stockController),
+  });
+
+  // GET /api/stocks/schedule/log - Log comprehensive schedule information
+  fastify.get('/schedule/log', {
+    handler: stockController.logScheduleInfo.bind(stockController),
+  });
 };
 
 export { stockRoutes };

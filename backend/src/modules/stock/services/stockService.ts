@@ -14,6 +14,7 @@ import { PolygonService } from './polygonService.js';
 export class StockService {
   private fastify: FastifyInstance;
   private polygonService: PolygonService;
+  private processingBatches: Set<number> = new Set();
 
   constructor(fastify: FastifyInstance) {
     this.fastify = fastify;
@@ -149,6 +150,21 @@ export class StockService {
     totalBatches: number,
     forceUpdate = false
   ): Promise<StockUpdateResponse> {
+    // Check if batch is already processing (idempotency)
+    if (this.processingBatches.has(batchNumber)) {
+      console.log(`Batch ${batchNumber} is already processing, skipping...`);
+      return {
+        success: true,
+        message: `Batch ${batchNumber} is already processing`,
+        processed: 0,
+        totalBatches,
+        errors: [],
+      };
+    }
+
+    // Mark batch as processing
+    this.processingBatches.add(batchNumber);
+
     const startTime = Date.now();
     const batchInfo = this.calculateBatchInfo(batchNumber, totalBatches);
     const errors: string[] = [];
@@ -157,8 +173,22 @@ export class StockService {
     let apiErrors = 0;
 
     try {
+      // Log timezone information
+      this.polygonService.logTimezoneInfo();
+
+      // Always proceed with update for free plan data collection
+      // Market status is logged for information but doesn't block updates
+      const updateCheck = this.polygonService.shouldUpdateData();
+      console.log(`Market status info: ${updateCheck.reason}`);
+
+      // Force update for free plan data collection
+      if (!forceUpdate) {
+        console.log('Proceeding with update for free plan data collection');
+      }
+
       console.log(`Starting updateStocks...`);
       console.log(`Processing batch ${batchNumber} of ${totalBatches}`);
+      console.log(`Update reason: ${updateCheck.reason}`);
 
       // Get target symbols for this batch
       const targetSymbols = await this.getTargetSymbols();
@@ -201,30 +231,52 @@ export class StockService {
             `Processing ${ticker.ticker} (${i + 1}/${polygonTickers.length})`
           );
 
-          // Get current and monthly data using grouped aggregates (safe for free plan)
-          const currentDate = this.polygonService.getDateNDaysAgo(2); // 2 days ago for "current" data
-          const monthlyDate = this.polygonService.getDateNDaysAgo(32); // 32 days ago for monthly comparison
+          // Get current and monthly data using optimal dates based on market status
+          const currentDate = this.polygonService.getMostRecentTradingDay();
+          const monthlyDate = this.polygonService.getMonthlyComparisonDate();
 
-          // Sequential requests to avoid rate limiting
-          const currentData =
-            await this.polygonService.getGroupedStocksAggregates(currentDate);
-          await this.delay(15000); // Wait 15 seconds between requests
-          const monthlyData =
-            await this.polygonService.getGroupedStocksAggregates(monthlyDate);
+          console.log(
+            `Fetching data for ${ticker.ticker}: current=${currentDate} (2 days ago, last completed trading day), monthly=${monthlyDate} (30 days ago, weekday)`
+          );
 
-          // Find current day data (open and close) and monthly close price
-          const currentTickerData = this.findTickerData(
-            currentData,
-            ticker.ticker
+          // Use individual API calls (free plan compatible)
+          const currentData = await this.polygonService.getDailyData(
+            ticker.ticker,
+            currentDate
           );
-          const monthlyClosePrice = this.findTickerPrice(
-            monthlyData,
-            ticker.ticker
+
+          // Wait 30 seconds between requests (free plan rate limit: 2 calls/minute for safety)
+          await this.delay(30000);
+
+          const monthlyData = await this.polygonService.getDailyData(
+            ticker.ticker,
+            monthlyDate
           );
+
+          // Process data with validation
+          const currentTickerData = currentData
+            ? {
+                open: currentData.open || 0,
+                close: currentData.close || 0,
+                high: currentData.high || 0,
+                low: currentData.low || 0,
+                volume: currentData.volume || 0,
+              }
+            : { open: 0, close: 0, high: 0, low: 0, volume: 0 };
+
+          const monthlyClosePrice = monthlyData?.close || 0;
+
+          // Validate data before processing
+          if (currentTickerData.close <= 0) {
+            console.log(
+              `WARNING: ${ticker.ticker} - No valid current data (close: ${currentTickerData.close})`
+            );
+            continue; // Skip this ticker
+          }
 
           const stockData = this.polygonService.convertToStockData(
             ticker,
-            currentTickerData, // Contains open and close for daily changes
+            currentTickerData as any, // Contains open and close for daily changes
             { close: monthlyClosePrice } as any // Monthly close price
           );
 
@@ -255,22 +307,26 @@ export class StockService {
               error.message.includes('NOT_AUTHORIZED')
             ) {
               console.log(
-                `WARNING: ${tickerSymbol}: Free plan limitation - using historical data only`
+                `WARNING: ${tickerSymbol}: Free plan limitation - current day data not available, skipping ticker`
               );
-              // Don't count as error since it's expected with free plan
-              // errors.push(
-              //   `${tickerSymbol}: API access denied - may need plan upgrade`
-              // );
+              // Skip this ticker and continue with next one
+              continue;
             } else if (
               error.message.includes('429') ||
               error.message.includes('Too Many Requests')
             ) {
               rateLimitHits++;
               console.log(
-                `RATE LIMIT: ${tickerSymbol}: Rate limit hit (429) - waiting longer`
+                `RATE LIMIT: ${tickerSymbol}: Rate limit hit (429) - waiting 30 seconds`
               );
               await this.delay(30000);
               errors.push(`${tickerSymbol}: Rate limit exceeded`);
+            } else if (error.message.includes('404')) {
+              console.log(
+                `WARNING: ${tickerSymbol}: No data available (weekend/holiday) - skipping ticker`
+              );
+              // Skip this ticker if no data available
+              continue;
             } else {
               console.error(
                 `ERROR: ${tickerSymbol}: ${error.message} (${symbolTime}ms)`
@@ -316,40 +372,71 @@ export class StockService {
         error
       );
       throw error;
+    } finally {
+      // Always remove batch from processing set
+      this.processingBatches.delete(batchNumber);
     }
   }
 
   /**
    * Calculate adaptive delay based on batch progress and time
+   * Optimized for free plan (2 calls/minute for safety)
    */
   private calculateAdaptiveDelay(
     batchNumber: number,
     currentIndex: number,
     totalInBatch: number
   ): number {
-    let baseDelay = 18000;
+    // Base delay: 30 seconds (free plan: 2 calls/minute for safety)
+    let baseDelay = 30000;
 
-    if (batchNumber > 20) {
-      baseDelay += 5000;
-    } else if (batchNumber > 10) {
-      baseDelay += 2000;
+    // Increase delay for later batches to avoid rate limiting
+    if (batchNumber > 10) {
+      baseDelay += 15000; // 45 seconds for later batches
+    } else if (batchNumber > 5) {
+      baseDelay += 10000; // 40 seconds for middle batches
     }
 
+    // Increase delay as we progress through batch
     const progressInBatch = currentIndex / totalInBatch;
-    if (progressInBatch > 0.7) {
-      baseDelay += 2000;
+    if (progressInBatch > 0.8) {
+      baseDelay += 10000; // Extra delay near end of batch
+    } else if (progressInBatch > 0.5) {
+      baseDelay += 5000; // Moderate delay in middle of batch
     }
 
-    const jitter = Math.random() * 1500 + 500;
+    // Add random jitter to avoid synchronized requests
+    const jitter = Math.random() * 5000 + 2000; // 2-7 seconds jitter
 
     return Math.floor(baseDelay + jitter);
   }
 
   /**
-   * Create or update a single stock
+   * Create or update a single stock with data validation
    */
   async upsertStock(stockData: StockData): Promise<void> {
     try {
+      // Check if we're trying to overwrite with zero values
+      const existingStock = await this.fastify.mongo
+        .db!.collection('stocks')
+        .findOne({ symbol: stockData.symbol });
+
+      // Prevent overwriting valid data with zero values
+      if (existingStock && existingStock.price > 0 && stockData.price <= 0) {
+        console.log(
+          `SKIPPING UPDATE: ${stockData.symbol} - would overwrite valid data (${existingStock.price}) with zero value`
+        );
+        return;
+      }
+
+      // Only update if we have valid data
+      if (stockData.price <= 0) {
+        console.log(
+          `SKIPPING UPDATE: ${stockData.symbol} - no valid price data (${stockData.price})`
+        );
+        return;
+      }
+
       const now = new Date();
       await this.fastify.mongo.db!.collection('stocks').updateOne(
         { symbol: stockData.symbol },
@@ -364,6 +451,8 @@ export class StockService {
         },
         { upsert: true }
       );
+
+      console.log(`UPDATED: ${stockData.symbol} - price: ${stockData.price}`);
     } catch (error) {
       console.error('Error upserting stock:', error);
       throw error;

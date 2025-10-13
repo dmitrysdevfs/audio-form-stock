@@ -5,6 +5,7 @@ import {
   PolygonDailyData,
   StockData,
 } from '../types/index.js';
+import { TimezoneUtils } from '../utils/timezoneUtils.js';
 
 /**
  * Polygon.io API service for fetching stock data using official client
@@ -230,5 +231,119 @@ export class PolygonService {
     const date = new Date();
     date.setDate(date.getDate() - days);
     return date.toISOString().split('T')[0] || '';
+  }
+
+  /**
+   * Get market status and optimal update timing
+   */
+  getMarketStatus() {
+    return TimezoneUtils.getMarketStatus();
+  }
+
+  /**
+   * Get optimal update schedule based on market hours and Kyiv time
+   */
+  getOptimalUpdateSchedule() {
+    return TimezoneUtils.getOptimalUpdateSchedule();
+  }
+
+  /**
+   * Get current time in different timezones for logging
+   */
+  getCurrentTimes() {
+    return TimezoneUtils.getCurrentTimes();
+  }
+
+  /**
+   * Check if data should be updated based on market status
+   * For free plan: always allow updates to collect available data
+   */
+  shouldUpdateData(): {
+    shouldUpdate: boolean;
+    reason: string;
+    nextUpdate?: Date;
+  } {
+    const schedule = this.getOptimalUpdateSchedule();
+    const kyivTime = TimezoneUtils.toKyivTime(new Date());
+
+    // For free plan: always allow updates to collect available data
+    return {
+      shouldUpdate: true, // Always allow updates for free plan
+      reason: `Free plan data collection - ${schedule.reason}`,
+      nextUpdate: schedule.nextUpdateTime,
+    };
+  }
+
+  /**
+   * Get the most recent trading day date
+   * For free plan: find last completed trading day (skip current day)
+   */
+  getMostRecentTradingDay(): string {
+    // Start from 2 days ago to ensure we get completed trading day
+    // Free plan blocks current day data even if it's "yesterday" in UTC
+    let checkDate = new Date();
+    checkDate.setDate(checkDate.getDate() - 2);
+
+    // Go back until we find a weekday (Monday-Friday)
+    while (checkDate.getDay() === 0 || checkDate.getDay() === 6) {
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    return checkDate.toISOString().split('T')[0] || '';
+  }
+
+  /**
+   * Get date for monthly comparison (30 days ago, skip weekends)
+   */
+  getMonthlyComparisonDate(): string {
+    // Start from 30 days ago and go back until we find a weekday
+    let checkDate = new Date();
+    checkDate.setDate(checkDate.getDate() - 30);
+
+    // Go back until we find a weekday (Monday-Friday)
+    while (checkDate.getDay() === 0 || checkDate.getDay() === 6) {
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    return checkDate.toISOString().split('T')[0] || '';
+  }
+
+  /**
+   * Log current timezone information for debugging
+   */
+  logTimezoneInfo(): void {
+    const times = this.getCurrentTimes();
+    const marketStatus = this.getMarketStatus();
+    const schedule = this.getOptimalUpdateSchedule();
+
+    console.log('=== TIMEZONE INFORMATION ===');
+    console.log(`UTC Time: ${times.utc.toISOString()}`);
+    console.log(
+      `Eastern Time: ${TimezoneUtils.formatEasternTime(times.eastern)}`
+    );
+    console.log(`Kyiv Time: ${TimezoneUtils.formatKyivTime(times.kyiv)}`);
+    console.log(`Market Status: ${marketStatus.currentSession}`);
+    console.log(`Market Open: ${marketStatus.isMarketOpen}`);
+    console.log(`Pre-Market: ${marketStatus.isPreMarket}`);
+    console.log(`After Hours: ${marketStatus.isAfterHours}`);
+    console.log(
+      `Next Market Open: ${TimezoneUtils.formatKyivTime(
+        marketStatus.nextMarketOpen
+      )}`
+    );
+    console.log(
+      `Next Market Close: ${TimezoneUtils.formatKyivTime(
+        marketStatus.nextMarketClose
+      )}`
+    );
+    console.log(`Update Schedule: ${schedule.reason}`);
+    console.log(
+      `Next Update: ${
+        schedule.nextUpdateTime
+          ? TimezoneUtils.formatKyivTime(schedule.nextUpdateTime)
+          : 'N/A'
+      }`
+    );
+    console.log('============================');
   }
 }
