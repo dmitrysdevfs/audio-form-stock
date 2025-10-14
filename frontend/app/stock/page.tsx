@@ -28,7 +28,7 @@ const columns = [
   { key: 'monthlyChangesPercentage', label: 'Price change per month' },
 ];
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 15;
 
 export default function StockPage() {
   const [countryFilter, setCountryFilter] = useState('');
@@ -125,7 +125,7 @@ export default function StockPage() {
   // Show loading state
   if (loading && stocks.length === 0) {
     return (
-      <div className="min-h-[calc(100vh-12rem)] bg-background p-4 mt-48">
+      <div className="min-h-[calc(100vh-8rem)] bg-background p-4 mt-32">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-center items-center min-h-[400px]">
             <Card>
@@ -143,7 +143,7 @@ export default function StockPage() {
   // Show error state
   if (error) {
     return (
-      <div className="min-h-[calc(100vh-12rem)] bg-background p-4 mt-48">
+      <div className="min-h-[calc(100vh-8rem)] bg-background p-4 mt-32">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-center items-center min-h-[400px]">
             <Card>
@@ -159,11 +159,11 @@ export default function StockPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-12rem)] bg-background p-4 mt-48">
+    <div className="min-h-[calc(100vh-8rem)] bg-background p-4 mt-32">
       <div className="max-w-7xl mx-auto">
         <div
           className="flex flex-col items-center"
-          style={{ marginTop: '8px', marginBottom: '60px', gap: '30px' }}
+          style={{ marginTop: '2px', marginBottom: '60px', gap: '30px' }}
         >
           <Input
             placeholder="Enter your country"
@@ -173,6 +173,7 @@ export default function StockPage() {
             color="default"
             size="md"
             radius="lg"
+            isDisabled
             classNames={{
               input: 'px-3',
               inputWrapper: 'w-[319px] h-[38px] mx-auto',

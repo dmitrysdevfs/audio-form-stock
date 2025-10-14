@@ -91,7 +91,7 @@ class StockApiService {
       sortBy = 'marketCap',
       sortOrder = 'desc',
       page = 1,
-      limit = 50,
+      limit = 15,
     } = filters;
 
     let filteredData = [...MOCK_STOCKS_DATA];

@@ -322,8 +322,8 @@ export default function AudioPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="max-w-md w-full p-8 bg-default-50">
-        <CardBody className="space-y-6 flex flex-col items-center justify-center">
+      <Card className="max-w-md w-full p-4 bg-default-50">
+        <CardBody className="space-y-4 flex flex-col items-center justify-center">
           {/* Connection Status */}
           <div className="flex items-center gap-2">
             <Chip

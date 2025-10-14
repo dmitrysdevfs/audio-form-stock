@@ -24,7 +24,7 @@ export const useStocks = (initialFilters: StockFilters = {}) => {
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [limit] = useState(20);
+  const [limit] = useState(15);
   const [sortBy, setSortBy] = useState(initialFilters.sortBy || 'marketCap');
   const [sortOrder, setSortOrder] = useState(initialFilters.sortOrder || 'desc');
   const [filters, setFilters] = useState<StockFilters>({
