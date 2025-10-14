@@ -9,9 +9,9 @@ A modern NextJS application for audio-based stock market analysis with form hand
 - **Tailwind CSS v3.4.0** - Utility-first CSS framework
 - **TypeScript** - Type safety out of the box
 - **Framer Motion** - Smooth animations and transitions
-- **Multi-step Forms** - Form handling with validation
-- **Stock Market Data** - Stock data with filtering and pagination
-- **Audio Processing** - Microphone access for voice analysis (planned)
+- **Multi-step Forms** - Form handling with validation and backend integration
+- **Stock Market Data** - Real-time stock data with filtering and pagination
+- **Audio Processing** - Real-time AI conversation with OpenAI Realtime API
 
 ## Tech Stack
 
@@ -54,7 +54,7 @@ A modern NextJS application for audio-based stock market analysis with form hand
 │   ├── api/
 │   │   └── MOCK_STOCKS_DATA.ts    # Mock stock market data
 │   ├── audio/
-│   │   └── page.tsx               # Audio recording page (coming soon)
+│   │   └── page.tsx               # Real-time AI conversation page
 │   ├── components/
 │   │   └── Navigation.tsx         # Navigation component
 │   ├── form/
@@ -78,7 +78,7 @@ A modern NextJS application for audio-based stock market analysis with form hand
 This frontend is part of a fullstack monorepo [`audio-form-stock`](../README.md), which includes:
 
 - `frontend/` — this Next.js application
-- `backend/` — Fastify server with MongoDB integration (planned)
+- `backend/` — Fastify server with MongoDB integration
 
 Each part is deployed independently: frontend on Vercel, backend on Render.
 
@@ -86,26 +86,31 @@ Each part is deployed independently: frontend on Vercel, backend on Render.
 
 ### Registration Form (`/form`)
 
-- Multi-step form with email field using NextUI components
-- Form validation and animated transitions
-- **Note:** Data submission to server not yet implemented
+- Multi-step form with email and password fields using NextUI components
+- Form validation and animated transitions with Framer Motion
+- **Backend Integration:** Real-time data submission to Fastify server with MongoDB storage
+- **Features:** Email validation, password confirmation, error handling
 
 ### Stock Data (`/stock`)
 
 - Table with filtering by country and stock symbol
 - Displays company name, symbol, market cap, price, and daily changes
-- **Note:** Currently uses mock data from `app/api/MOCK_STOCKS_DATA.ts`. Real API integration via backend is planned
+- **Backend Integration:** Real API integration with fallback to mock data
+- **Features:** Pagination, sorting, real-time data updates, responsive design
 
 ### Audio Processing (`/audio`)
 
-- Placeholder page for future audio recording functionality
-- **Note:** Microphone access and voice processing not yet implemented
+- **Real-time AI Conversation:** OpenAI Realtime API integration with WebSocket communication
+- **Audio Processing:** PCM16 mono 24kHz conversion for OpenAI compatibility
+- **Features:** Microphone access, real-time text responses, auto-scrolling conversation display
+- **UI Components:** NextUI Textarea with smooth auto-scroll for AI responses
 
-### Planned Backend Integration
+### Backend Integration Status
 
-- MongoDB integration for data storage
-- API integration with stock data providers (Alpha Vantage, Polygon.io, Finnhub, Yahoo Finance)
-- Data processing and validation
+- **MongoDB Integration:** Active data storage for forms and stock data
+- **API Integration:** Polygon.io for stock data, OpenAI for audio processing
+- **WebSocket Communication:** Real-time audio and text streaming
+- **Data Processing:** Automated daily stock updates via GitHub Actions
 
 ## Environment Variables
 
@@ -136,7 +141,7 @@ NEXT_PUBLIC_BACKEND_URL=wss://your-backend-url.onrender.com
 - **`/`** - Home dashboard with navigation
 - **`/form`** - Multi-step form with validation
 - **`/stock`** - Stock market data with filtering
-- **`/audio`** - Audio recording (planned)
+- **`/audio`** - Real-time AI conversation with OpenAI Realtime API
 
 ## Available Scripts
 

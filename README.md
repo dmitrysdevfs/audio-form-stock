@@ -8,7 +8,7 @@ This application consists of three core features:
 
 - **Audio Page** - Real-time AI conversation with microphone input and audio visualization
 - **Form Page** - User registration with email validation and MongoDB storage
-- **Stock Page** - End-of-day financial data from 330+ US companies with advanced filtering
+- **Stock Page** - End-of-day financial data from 110+ US companies with advanced filtering
 
 ## Current Status
 
@@ -16,19 +16,21 @@ This application consists of three core features:
 
 - **Form Page** - Registration form with NextUI components and MongoDB storage
 - **Stock Page** - Complete data pipeline with filtering and pagination
+- **Audio Page** - Real-time AI conversation with microphone integration and text responses
 - **Backend API** - Fastify server with MongoDB Atlas connection
 - **Stock Data Pipeline** - Polygon.io (End-of-day) → MongoDB → Frontend integration
+- **Audio Data Pipeline** - OpenAI Realtime API → WebSocket → Frontend integration
 - **Data Automation** - GitHub Actions for daily stock updates
 - **Advanced Filtering** - Symbol and company name search (US companies only)
-- **Pagination** - 20 records per page with navigation
+- **Pagination** - 15 records per page with navigation
 - **Default Sorting** - Market capitalization (descending)
-
-### In Development
-
-- **Audio Page** - Real-time AI conversation with microphone integration
 
 ### Recent Updates
 
+- **Audio Integration** - OpenAI Realtime API with WebSocket communication
+- **NextUI Components** - Textarea with auto-scroll for AI responses
+- **Audio Processing** - PCM16 mono 24kHz conversion for OpenAI compatibility
+- **Real-time Streaming** - Live text responses with smooth auto-scrolling
 - **UI Optimization** - Removed health status and refresh buttons
 - **Performance** - Disabled auto-refresh (End-of-day data updates once daily)
 - **Sorting Fix** - Proper market cap sorting maintained across pages
@@ -50,6 +52,7 @@ This is a monorepo with the following structure:
 - Node.js 18+
 - MongoDB Atlas account
 - Polygon.io API key (free tier: 5 calls/minute, End-of-day data only)
+- OpenAI API key (for Audio page functionality)
 
 ### Installation
 
@@ -85,7 +88,7 @@ npm start
 audio-form-stock/
 ├── frontend/                    # NextJS application
 │   ├── app/                    # App Router pages
-│   │   ├── audio/             # Audio AI conversation (planned)
+│   │   ├── audio/             # Audio AI conversation
 │   │   ├── form/              # User registration
 │   │   ├── stock/             # Stock data visualization
 │   │   ├── hooks/             # Custom React hooks
@@ -96,7 +99,7 @@ audio-form-stock/
 │   ├── src/                   # Server source code
 │   │   ├── modules/stock/     # Stock data module
 │   │   ├── modules/form/      # Form data module
-│   │   ├── modules/audio/      # Audio processing module (planned)
+│   │   ├── modules/audio/      # Audio processing module
 │   │   ├── plugins/           # Fastify plugins
 │   │   └── routes/            # API routes
 │   └── package.json           # Backend dependencies
@@ -120,8 +123,8 @@ audio-form-stock/
 - **Fastify v5.6.0** - Fast web framework
 - **MongoDB Atlas** - Cloud database with @fastify/mongodb
 - **Polygon.io API** - Stock market data source (End-of-day data only on free tier)
-- **OpenAI API** - AI conversation processing (planned for Audio page)
-- **WebSocket/WebRTC** - Real-time communication (planned for Audio page)
+- **OpenAI Realtime API** - AI conversation processing with streaming responses
+- **WebSocket** - Real-time communication for audio and text streaming
 - **Pino-pretty** - Beautiful logging
 - **TypeScript** - Type safety
 
@@ -147,10 +150,10 @@ audio-form-stock/
 - `GET /api/stocks/:symbol` - Get stock by symbol
 - `POST /api/stocks/update` - Update stocks (GitHub Actions)
 
-### Audio API (Planned)
+### Audio API
 
-- `WebSocket /api/audio/stream` - Real-time audio streaming
-- `POST /api/audio/process` - Audio processing with OpenAI
+- `WebSocket /api/conversation` - Real-time audio and text streaming
+- OpenAI Realtime API integration with WebSocket communication
 
 ## API Limitations
 
@@ -181,16 +184,17 @@ audio-form-stock/
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/audio-form-stock?retryWrites=true&w=majority
 PORT=3001
 NODE_ENV=development
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
 ## Features
 
-### Audio Page (Planned)
+### Audio Page
 
-- **Real-time AI Conversation** - Microphone input with OpenAI integration
-- **Audio Visualization** - Real-time audio waveform display
-- **Lottie Animations** - Animated microphone button
-- **WebSocket/WebRTC** - Real-time audio streaming
+- **Real-time AI Conversation** - Microphone input with OpenAI Realtime API
+- **Text Responses** - NextUI Textarea with auto-scroll for AI responses
+- **Audio Processing** - PCM16 mono 24kHz conversion for OpenAI compatibility
+- **WebSocket Communication** - Real-time audio and text streaming
 
 ### Form Page
 
