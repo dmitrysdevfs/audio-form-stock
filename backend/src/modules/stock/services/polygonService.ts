@@ -13,14 +13,16 @@ import { TimezoneUtils } from '../utils/timezoneUtils.js';
 export class PolygonService {
   private rest: any;
   private rateLimitDelay: number;
+  private fastify: any;
 
-  constructor() {
+  constructor(fastify?: any) {
     const apiKey = process.env.POLYGON_API_KEY;
     if (!apiKey) {
       throw new Error('POLYGON_API_KEY environment variable is required');
     }
     this.rest = restClient(apiKey, 'https://api.polygon.io');
     this.rateLimitDelay = 18000; // 18 seconds for optimal balance (4 calls/minute = 15s + 3s buffer)
+    this.fastify = fastify;
   }
 
   async getTickers(): Promise<PolygonTicker[]> {
@@ -276,15 +278,94 @@ export class PolygonService {
 
   /**
    * Get the most recent trading day date
-   * For free plan: find last completed trading day (skip current day)
+   * Enhanced logic: considers update history to avoid duplicates
    */
-  getMostRecentTradingDay(): string {
-    // Start from 2 days ago to ensure we get completed trading day
-    // Free plan blocks current day data even if it's "yesterday" in UTC
+  async getMostRecentTradingDay(): Promise<string> {
+    try {
+      // Check if we have update history in database
+      const lastUpdate = await this.getLastUpdateInfo();
+
+      if (lastUpdate) {
+        console.log(
+          `Last update was: ${lastUpdate.lastUpdateDate} (${lastUpdate.lastUpdateTime})`
+        );
+
+        const lastUpdateDate = new Date(lastUpdate.lastUpdateDate);
+        const today = new Date();
+
+        if (
+          this.isSameDay(lastUpdateDate, today) ||
+          this.isSameDay(lastUpdateDate, this.getYesterday())
+        ) {
+          console.log(
+            'Data already updated for recent dates, looking for next available date...'
+          );
+          return this.getNextAvailableTradingDay(lastUpdateDate);
+        }
+      }
+    } catch (error) {
+      console.log('No update history found, using original logic');
+    }
+
+    // Fallback to original logic if no history
+    return this.getOriginalMostRecentTradingDay();
+  }
+
+  /**
+   * Get next available trading day after a given date
+   */
+  private getNextAvailableTradingDay(afterDate: Date): string {
+    let checkDate = new Date(afterDate);
+    checkDate.setDate(checkDate.getDate() + 1); // Start from next day
+
+    // Go forward until we find a weekday
+    while (checkDate.getDay() === 0 || checkDate.getDay() === 6) {
+      checkDate.setDate(checkDate.getDate() + 1);
+    }
+
+    return checkDate.toISOString().split('T')[0] || '';
+  }
+
+  /**
+   * Get last update information from database
+   */
+  private async getLastUpdateInfo(): Promise<any> {
+    try {
+      // Check if we have update history in database
+      const updateHistory = await this.fastify.mongo
+        .db!.collection('update_history')
+        .findOne({}, { sort: { lastUpdateTime: -1 } });
+
+      return updateHistory;
+    } catch (error) {
+      console.log('No update history found, using original logic');
+      return null;
+    }
+  }
+
+  /**
+   * Check if two dates are the same day
+   */
+  private isSameDay(date1: Date, date2: Date): boolean {
+    return date1.toDateString() === date2.toDateString();
+  }
+
+  /**
+   * Get yesterday's date
+   */
+  private getYesterday(): Date {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return yesterday;
+  }
+
+  /**
+   * Original logic for most recent trading day
+   */
+  private getOriginalMostRecentTradingDay(): string {
     let checkDate = new Date();
     checkDate.setDate(checkDate.getDate() - 2);
 
-    // Go back until we find a weekday (Monday-Friday)
     while (checkDate.getDay() === 0 || checkDate.getDay() === 6) {
       checkDate.setDate(checkDate.getDate() - 1);
     }
@@ -294,18 +375,98 @@ export class PolygonService {
 
   /**
    * Get date for monthly comparison (30 days ago, skip weekends)
+   * Enhanced logic: considers update history to avoid duplicates
    */
-  getMonthlyComparisonDate(): string {
-    // Start from 30 days ago and go back until we find a weekday
+  async getMonthlyComparisonDate(): Promise<string> {
+    try {
+      // Check if we have update history in database
+      const lastUpdate = await this.getLastUpdateInfo();
+
+      if (lastUpdate) {
+        console.log(`Last monthly update was: ${lastUpdate.lastMonthlyDate}`);
+
+        const lastMonthlyDate = new Date(lastUpdate.lastMonthlyDate);
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        if (lastMonthlyDate >= thirtyDaysAgo) {
+          console.log(
+            'Monthly data already updated recently, looking for next available date...'
+          );
+          return this.getNextAvailableTradingDay(lastMonthlyDate);
+        }
+      }
+    } catch (error) {
+      console.log('No update history found, using original logic');
+    }
+
+    // Fallback to original logic
+    return this.getOriginalMonthlyComparisonDate();
+  }
+
+  /**
+   * Original logic for monthly comparison date
+   */
+  private getOriginalMonthlyComparisonDate(): string {
     let checkDate = new Date();
     checkDate.setDate(checkDate.getDate() - 30);
 
-    // Go back until we find a weekday (Monday-Friday)
     while (checkDate.getDay() === 0 || checkDate.getDay() === 6) {
       checkDate.setDate(checkDate.getDate() - 1);
     }
 
     return checkDate.toISOString().split('T')[0] || '';
+  }
+
+  /**
+   * Save update information to database
+   */
+  async saveUpdateInfo(
+    currentDate: string,
+    monthlyDate: string
+  ): Promise<void> {
+    console.log(
+      `DEBUG: saveUpdateInfo called with current=${currentDate}, monthly=${monthlyDate}`
+    );
+    try {
+      const updateInfo = {
+        lastUpdateDate: currentDate,
+        lastMonthlyDate: monthlyDate,
+        lastUpdateTime: new Date(),
+        totalUpdates: 1,
+      };
+
+      console.log(`DEBUG: About to insert updateInfo:`, updateInfo);
+
+      if (!this.fastify) {
+        console.error('ERROR: fastify not available');
+        return;
+      }
+
+      if (!this.fastify.mongo) {
+        console.error(
+          'ERROR: MongoDB not available - check MONGODB_URI environment variable'
+        );
+        return;
+      }
+
+      if (!this.fastify.mongo.db) {
+        console.error('ERROR: MongoDB database not connected');
+        return;
+      }
+
+      // Ensure collection exists and create index
+      const collection = this.fastify.mongo.db!.collection('update_history');
+      await collection.createIndex({ lastUpdateTime: -1 });
+
+      await collection.insertOne(updateInfo);
+
+      console.log(
+        `SUCCESS: Saved update info: current=${currentDate}, monthly=${monthlyDate}`
+      );
+    } catch (error) {
+      console.error('ERROR: Failed to save update info:', error);
+    }
   }
 
   /**

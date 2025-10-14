@@ -128,24 +128,47 @@ export class ScheduleService {
     timeBetweenBatches: number;
     totalEstimatedTime: string;
     nextBatchTime?: Date;
+    sessionInfo: string;
   } {
     const marketStatus = this.polygonService.getMarketStatus();
     const schedule = this.polygonService.getOptimalUpdateSchedule();
 
     let timeBetweenBatches = 18000; // 18 seconds default
     let recommendedBatches = totalBatches;
+    let sessionInfo = '';
 
-    // Adjust based on market status
-    if (marketStatus.isMarketOpen) {
-      // During market hours: faster updates
-      timeBetweenBatches = 15000; // 15 seconds
-    } else if (marketStatus.isPreMarket || marketStatus.isAfterHours) {
-      // Pre-market or after-hours: moderate speed
-      timeBetweenBatches = 20000; // 20 seconds
-    } else {
-      // Market closed: slower updates
-      timeBetweenBatches = 30000; // 30 seconds
-      recommendedBatches = Math.min(totalBatches, 5); // Limit batches when closed
+    // Adjust based on market session
+    switch (marketStatus.currentSession) {
+      case 'regular':
+        // Regular market hours: fastest updates
+        timeBetweenBatches = 15000; // 15 seconds
+        recommendedBatches = totalBatches;
+        sessionInfo = 'Regular market hours - high frequency updates';
+        break;
+
+      case 'pre-market':
+        // Pre-market: moderate updates
+        timeBetweenBatches = 30000; // 30 seconds
+        recommendedBatches = Math.min(totalBatches, 8);
+        sessionInfo = 'Pre-market hours - moderate frequency updates';
+        break;
+
+      case 'after-hours':
+        // After-hours: moderate updates
+        timeBetweenBatches = 30000; // 30 seconds
+        recommendedBatches = Math.min(totalBatches, 8);
+        sessionInfo = 'After-hours trading - moderate frequency updates';
+        break;
+
+      case 'closed':
+        // Market closed: minimal updates
+        timeBetweenBatches = 60000; // 1 minute
+        recommendedBatches = Math.min(totalBatches, 3);
+        sessionInfo = 'Market closed - minimal updates';
+        break;
+
+      default:
+        sessionInfo = 'Unknown market session';
     }
 
     const totalEstimatedTime = Math.round(
@@ -158,6 +181,7 @@ export class ScheduleService {
       timeBetweenBatches,
       totalEstimatedTime: `${totalEstimatedTime} minutes`,
       nextBatchTime,
+      sessionInfo,
     };
   }
 
@@ -179,12 +203,80 @@ export class ScheduleService {
   }
 
   /**
+   * Get session-specific update recommendations
+   */
+  getSessionRecommendations(): {
+    currentSession: string;
+    updateFrequency: string;
+    recommendedBatches: number;
+    timeBetweenBatches: number;
+    isOptimalTime: boolean;
+    nextSessionChange: string;
+  } {
+    const marketStatus = this.polygonService.getMarketStatus();
+    const batchSchedule = this.getBatchSchedule(10);
+
+    let updateFrequency = '';
+    let isOptimalTime = false;
+    let nextSessionChange = '';
+
+    switch (marketStatus.currentSession) {
+      case 'regular':
+        updateFrequency = 'Every 15 minutes';
+        isOptimalTime = true;
+        nextSessionChange = `After-hours starts at ${TimezoneUtils.formatKyivTime(
+          marketStatus.nextMarketClose
+        )}`;
+        break;
+
+      case 'pre-market':
+        updateFrequency = 'Every 30 minutes';
+        isOptimalTime = false;
+        nextSessionChange = `Regular market starts at ${TimezoneUtils.formatKyivTime(
+          marketStatus.nextMarketOpen
+        )}`;
+        break;
+
+      case 'after-hours':
+        updateFrequency = 'Every 30 minutes';
+        isOptimalTime = false;
+        nextSessionChange = `Market closes at ${TimezoneUtils.formatKyivTime(
+          marketStatus.nextMarketClose
+        )}`;
+        break;
+
+      case 'closed':
+        updateFrequency = 'Minimal updates';
+        isOptimalTime = false;
+        nextSessionChange = `Market opens at ${TimezoneUtils.formatKyivTime(
+          marketStatus.nextMarketOpen
+        )}`;
+        break;
+
+      default:
+        updateFrequency = 'Unknown';
+        isOptimalTime = false;
+        nextSessionChange = 'Unknown';
+    }
+
+    return {
+      currentSession: marketStatus.currentSession,
+      updateFrequency,
+      recommendedBatches: batchSchedule.recommendedBatches,
+      timeBetweenBatches: batchSchedule.timeBetweenBatches,
+      isOptimalTime,
+      nextSessionChange,
+    };
+  }
+
+  /**
    * Log comprehensive schedule information
    */
   logScheduleInfo(): void {
     const info = this.getDetailedInfo();
     const batchSchedule = this.getBatchSchedule(10);
     const marketHours = this.getMarketHoursInfo();
+    const sessionRecommendations = this.getSessionRecommendations();
 
     console.log('\n=== SCHEDULE SERVICE INFORMATION ===');
     console.log('TIMEZONES:');
@@ -205,7 +297,18 @@ export class ScheduleService {
     console.log(`  Reason: ${info.schedule.reason}`);
     console.log(`  Next Update: ${info.schedule.nextUpdate}`);
 
+    console.log('\nSESSION RECOMMENDATIONS:');
+    console.log(`  Current Session: ${sessionRecommendations.currentSession}`);
+    console.log(
+      `  Update Frequency: ${sessionRecommendations.updateFrequency}`
+    );
+    console.log(`  Is Optimal Time: ${sessionRecommendations.isOptimalTime}`);
+    console.log(
+      `  Next Session Change: ${sessionRecommendations.nextSessionChange}`
+    );
+
     console.log('\nBATCH PROCESSING:');
+    console.log(`  Session Info: ${batchSchedule.sessionInfo}`);
     console.log(`  Recommended Batches: ${batchSchedule.recommendedBatches}`);
     console.log(
       `  Time Between Batches: ${batchSchedule.timeBetweenBatches}ms`

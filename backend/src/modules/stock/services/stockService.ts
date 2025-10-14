@@ -18,7 +18,7 @@ export class StockService {
 
   constructor(fastify: FastifyInstance) {
     this.fastify = fastify;
-    this.polygonService = new PolygonService();
+    this.polygonService = new PolygonService(fastify);
   }
 
   /**
@@ -232,8 +232,10 @@ export class StockService {
           );
 
           // Get current and monthly data using optimal dates based on market status
-          const currentDate = this.polygonService.getMostRecentTradingDay();
-          const monthlyDate = this.polygonService.getMonthlyComparisonDate();
+          const currentDate =
+            await this.polygonService.getMostRecentTradingDay();
+          const monthlyDate =
+            await this.polygonService.getMonthlyComparisonDate();
 
           console.log(
             `Fetching data for ${ticker.ticker}: current=${currentDate} (2 days ago, last completed trading day), monthly=${monthlyDate} (30 days ago, weekday)`
@@ -245,7 +247,7 @@ export class StockService {
             currentDate
           );
 
-          // Wait 30 seconds between requests (free plan rate limit: 2 calls/minute for safety)
+          // Wait 30 seconds between requests (free plan rate limit)
           await this.delay(30000);
 
           const monthlyData = await this.polygonService.getDailyData(
@@ -355,6 +357,37 @@ export class StockService {
       console.log(`   Success rate: ${successRate}%`);
       console.log(`   Total time: ${(totalTime / 1000).toFixed(1)}s`);
 
+      // Save update history for enhanced logic
+      console.log(
+        `DEBUG: processed=${processed}, checking if we should save history...`
+      );
+      if (processed > 0) {
+        console.log(
+          'DEBUG: processed > 0, attempting to save update history...'
+        );
+        try {
+          // Get the actual dates that were used in this update
+          const usedCurrentDate =
+            await this.polygonService.getMostRecentTradingDay();
+          const usedMonthlyDate =
+            await this.polygonService.getMonthlyComparisonDate();
+          console.log(
+            `DEBUG: About to save: current=${usedCurrentDate}, monthly=${usedMonthlyDate}`
+          );
+          await this.polygonService.saveUpdateInfo(
+            usedCurrentDate,
+            usedMonthlyDate
+          );
+          console.log(
+            `SUCCESS: Saved update history: current=${usedCurrentDate}, monthly=${usedMonthlyDate}`
+          );
+        } catch (error) {
+          console.error('ERROR: Failed to save update history:', error);
+        }
+      } else {
+        console.log('DEBUG: processed <= 0, skipping history save');
+      }
+
       return {
         success: true,
         message: `Processed batch ${batchNumber} of ${totalBatches}`,
@@ -387,7 +420,7 @@ export class StockService {
     currentIndex: number,
     totalInBatch: number
   ): number {
-    // Base delay: 30 seconds (free plan: 2 calls/minute for safety)
+    // Base delay: 30 seconds (free plan rate limit)
     let baseDelay = 30000;
 
     // Increase delay for later batches to avoid rate limiting

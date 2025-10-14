@@ -41,24 +41,10 @@ export class TimezoneUtils {
   }
 
   /**
-   * Convert UTC time to Eastern Time (ET)
-   * Handles both EST (UTC-5) and EDT (UTC-4) automatically
+   * Parse timezone formatted string to Date object
    */
-  static toEasternTime(utcDate: Date): Date {
-    // Use JavaScript's built-in timezone handling
-    const easternTimeString = utcDate.toLocaleString('en-US', {
-      timeZone: 'America/New_York',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    });
-
-    // Parse the formatted string back to Date
-    const parts = easternTimeString.split(', ');
+  private static parseTimezoneString(timezoneString: string): Date {
+    const parts = timezoneString.split(', ');
     if (parts.length !== 2) {
       throw new Error('Invalid timezone conversion');
     }
@@ -87,6 +73,26 @@ export class TimezoneUtils {
       parseInt(minute),
       parseInt(second)
     );
+  }
+
+  /**
+   * Convert UTC time to Eastern Time (ET)
+   * Handles both EST (UTC-5) and EDT (UTC-4) automatically
+   */
+  static toEasternTime(utcDate: Date): Date {
+    // Use JavaScript's built-in timezone handling
+    const easternTimeString = utcDate.toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+
+    return this.parseTimezoneString(easternTimeString);
   }
 
   /**
@@ -163,6 +169,29 @@ export class TimezoneUtils {
   }
 
   /**
+   * Check if date falls on weekend
+   */
+  static isWeekend(date: Date): boolean {
+    const day = date.getDay();
+    return day === 0 || day === 6; // Sunday = 0, Saturday = 6
+  }
+
+  /**
+   * Check if we should sleep until market opens
+   */
+  static shouldSleepUntilMarketOpen(marketStatus: MarketStatus): boolean {
+    if (marketStatus.currentSession !== 'closed') {
+      return false;
+    }
+
+    const timeToOpen =
+      marketStatus.nextMarketOpen.getTime() - new Date().getTime();
+    const thirtyMinutesBeforeOpen = timeToOpen - 30 * 60 * 1000;
+
+    return thirtyMinutesBeforeOpen > 0;
+  }
+
+  /**
    * Get market status for current time
    */
   static getMarketStatus(): MarketStatus {
@@ -170,10 +199,9 @@ export class TimezoneUtils {
     const easternTime = this.toEasternTime(now);
 
     const currentTime = easternTime.toTimeString().slice(0, 5); // HH:MM format
-    const currentDay = easternTime.getDay(); // 0 = Sunday, 6 = Saturday
 
     // Market is closed on weekends
-    if (currentDay === 0 || currentDay === 6) {
+    if (this.isWeekend(easternTime)) {
       const nextMonday = this.getNextMonday(easternTime);
       const nextMarketOpen = this.getMarketOpenTime(nextMonday);
       const nextMarketClose = this.getMarketCloseTime(nextMonday);
@@ -329,48 +357,65 @@ export class TimezoneUtils {
     const marketStatus = this.getMarketStatus();
     const kyivTime = this.toKyivTime(new Date());
 
-    // During market hours: update every 15 minutes
-    if (marketStatus.isMarketOpen) {
+    // During regular market hours: update every 15 minutes
+    if (marketStatus.currentSession === 'regular') {
       const nextUpdate = new Date(kyivTime.getTime() + 15 * 60 * 1000);
       return {
         shouldUpdate: true,
         nextUpdateTime: nextUpdate,
-        reason: 'Market is open - regular updates',
+        reason: 'Regular market hours - frequent updates',
         marketStatus,
       };
     }
 
-    // Before market opens: update 30 minutes before open
+    // During pre-market: update every 30 minutes
+    if (marketStatus.currentSession === 'pre-market') {
+      const nextUpdate = new Date(kyivTime.getTime() + 30 * 60 * 1000);
+      return {
+        shouldUpdate: true,
+        nextUpdateTime: nextUpdate,
+        reason: 'Pre-market hours - moderate updates',
+        marketStatus,
+      };
+    }
+
+    // During after-hours: update every 30 minutes
+    if (marketStatus.currentSession === 'after-hours') {
+      const nextUpdate = new Date(kyivTime.getTime() + 30 * 60 * 1000);
+      return {
+        shouldUpdate: true,
+        nextUpdateTime: nextUpdate,
+        reason: 'After-hours trading - moderate updates',
+        marketStatus,
+      };
+    }
+
+    // Market is closed: check if we should sleep until market opens
     if (marketStatus.currentSession === 'closed') {
       const timeToOpen =
         marketStatus.nextMarketOpen.getTime() - new Date().getTime();
       const thirtyMinutesBeforeOpen = timeToOpen - 30 * 60 * 1000;
 
+      // If more than 30 minutes until open, sleep until 30 minutes before
       if (thirtyMinutesBeforeOpen > 0) {
         return {
           shouldUpdate: false,
           nextUpdateTime: new Date(
             new Date().getTime() + thirtyMinutesBeforeOpen
           ),
-          reason: 'Market closed - update 30 minutes before open',
+          reason: 'Market closed - sleeping until 30 minutes before open',
           marketStatus,
         };
       }
-    }
 
-    // After market closes: update once at 6 PM ET (1 AM Kyiv time next day)
-    if (marketStatus.currentSession === 'after-hours') {
-      const sixPMET = new Date();
-      sixPMET.setUTCHours(23, 0, 0, 0); // 6 PM ET = 11 PM UTC
-
-      if (new Date().getTime() < sixPMET.getTime()) {
-        return {
-          shouldUpdate: false,
-          nextUpdateTime: sixPMET,
-          reason: 'After hours - update at 6 PM ET',
-          marketStatus,
-        };
-      }
+      // Less than 30 minutes until open, start updating
+      const nextUpdate = new Date(kyivTime.getTime() + 5 * 60 * 1000); // Every 5 minutes
+      return {
+        shouldUpdate: true,
+        nextUpdateTime: nextUpdate,
+        reason: 'Market opening soon - preparing for updates',
+        marketStatus,
+      };
     }
 
     return {
