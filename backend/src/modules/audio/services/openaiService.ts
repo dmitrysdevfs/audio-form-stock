@@ -85,7 +85,7 @@ export class OpenAIRealtimeService {
           model: 'gpt-realtime',
           instructions:
             'You are a helpful AI assistant. Respond naturally to audio input and provide helpful responses.',
-          output_modalities: ['text', 'audio'],
+          output_modalities: ['text'],
           audio: {
             input: {
               format: {
@@ -161,6 +161,26 @@ export class OpenAIRealtimeService {
           timestamp: new Date().toISOString(),
         });
         break;
+      case 'response.output_text.delta':
+        console.log('Text delta received:', message.delta);
+        this.onResponse?.({
+          type: 'openai_response',
+          data: {
+            type: 'response.output_text.delta',
+            delta: message.delta,
+          },
+        });
+        break;
+      case 'response.output_text.done':
+        console.log('Text response completed:', message.text);
+        this.onResponse?.({
+          type: 'openai_response',
+          data: {
+            type: 'response.output_text.done',
+            text: message.text,
+          },
+        });
+        break;
       case 'conversation.item.response.output_audio.delta':
         this.onResponse?.({
           type: 'openai_response',
@@ -179,21 +199,10 @@ export class OpenAIRealtimeService {
         });
         break;
       case 'conversation.item.response.output_text.delta':
-        this.onResponse?.({
-          type: 'openai_response',
-          data: {
-            type: 'conversation.item.response.output_text.delta',
-            text: message.delta,
-          },
-        });
+        // Handled by response.output_text.delta
         break;
       case 'conversation.item.response.output_text.done':
-        this.onResponse?.({
-          type: 'openai_response',
-          data: {
-            type: 'conversation.item.response.output_text.done',
-          },
-        });
+        // Handled by response.output_text.done
         break;
       case 'error':
         console.error('OpenAI Error:', message);
