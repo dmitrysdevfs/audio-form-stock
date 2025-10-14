@@ -78,7 +78,9 @@ export default function AudioPage() {
       try {
         setConnectionStatus('connecting');
 
-        const ws = new WebSocket('ws://localhost:3001/api/conversation');
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'ws://localhost:3001';
+        const wsUrl = `${backendUrl}/api/conversation`;
+        const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
           setConnectionStatus('connected');
@@ -321,7 +323,7 @@ export default function AudioPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="max-w-md w-full p-8 bg-default-50">
-        <CardBody className="space-y-8 flex flex-col items-center justify-center">
+        <CardBody className="space-y-6 flex flex-col items-center justify-center">
           {/* Connection Status */}
           <div className="flex items-center gap-2">
             <Chip
@@ -362,7 +364,7 @@ export default function AudioPage() {
           </div>
 
           {/* Microphone Button */}
-          <div className="flex justify-center">
+          <div className="flex justify-center my-2">
             <MicButton
               isRecording={isRecording}
               onToggle={handleStartStop}
@@ -388,16 +390,11 @@ export default function AudioPage() {
             }}
           />
 
-          <div className="text-center space-y-2">
-            <p className="text-sm text-default-500">
-              {isConversationActive
-                ? isRecording
-                  ? 'Recording...'
-                  : 'Conversation active - ready to record'
-                : 'Start conversation to begin'}
-            </p>
-            {error && <p className="text-sm text-danger">{error}</p>}
-          </div>
+          {error && (
+            <div className="text-center">
+              <p className="text-sm text-danger">{error}</p>
+            </div>
+          )}
         </CardBody>
       </Card>
     </div>

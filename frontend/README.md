@@ -109,11 +109,27 @@ Each part is deployed independently: frontend on Vercel, backend on Render.
 
 ## Environment Variables
 
-| Variable             | Description                          |
-|----------------------|--------------------------------------|
-| `NEXT_PUBLIC_API_URL` | URL to backend API (e.g. Render)     |
+| Variable                    | Description                          |
+|-----------------------------|--------------------------------------|
+| `NEXT_PUBLIC_API_URL`       | URL to backend API (e.g. Render)     |
+| `NEXT_PUBLIC_BACKEND_URL`   | WebSocket URL for audio conversations |
 
-> Define in `.env.local` for local development.
+### Local Development Setup
+
+Create a `.env.local` file in the frontend directory:
+
+```bash
+# For local development
+NEXT_PUBLIC_BACKEND_URL=ws://localhost:3001
+```
+
+### Production Deployment
+
+For production deployment on Vercel, set the environment variable:
+
+```bash
+NEXT_PUBLIC_BACKEND_URL=wss://your-backend-url.onrender.com
+```
 
 ## Available Routes
 
