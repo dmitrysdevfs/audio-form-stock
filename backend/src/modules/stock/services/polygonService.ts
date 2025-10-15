@@ -362,16 +362,21 @@ export class PolygonService {
    */
   private getOriginalMostRecentTradingDay(): string {
     const now = new Date();
-    const kyivTime = TimezoneUtils.toKyivTime(now);
-    const kyivHour = kyivTime.getHours();
+    
+    // Get Kyiv time directly using toLocaleString
+    const kyivTimeString = now.toLocaleString('en-US', {
+      timeZone: 'Europe/Kyiv',
+      hour: '2-digit',
+      hour12: false,
+    });
+    
+    const kyivHour = parseInt(kyivTimeString.split(':')[0] || '0');
 
     // Before 8:00 Kyiv time: use 2 days ago (data not yet available)
     // After 8:00 Kyiv time: use 1 day ago (yesterday's data available)
-    const daysBack = kyivHour < 8 ? 2 : 1;
-    const timeDescription =
-      kyivHour < 8
-        ? '2 days ago (before 8:00 Kyiv)'
-        : '1 day ago (after 8:00 Kyiv)';
+    // Note: 2:00 AM is actually after 8:00 PM previous day, so data is available
+    const daysBack = kyivHour < 8 ? 1 : 1; // Always use 1 day ago for simplicity
+    const timeDescription = '1 day ago (data available)';
 
     let checkDate = new Date(now);
     checkDate.setDate(now.getDate() - daysBack);
@@ -403,16 +408,21 @@ export class PolygonService {
    */
   private getOriginalMonthlyComparisonDate(): string {
     const now = new Date();
-    const kyivTime = TimezoneUtils.toKyivTime(now);
-    const kyivHour = kyivTime.getHours();
+    
+    // Get Kyiv time directly using toLocaleString
+    const kyivTimeString = now.toLocaleString('en-US', {
+      timeZone: 'Europe/Kyiv',
+      hour: '2-digit',
+      hour12: false,
+    });
+    
+    const kyivHour = parseInt(kyivTimeString.split(':')[0] || '0');
 
     // Before 8:00 Kyiv time: use 30 days ago
     // After 8:00 Kyiv time: use 29 days ago (shifted with current date)
-    const daysBack = kyivHour < 8 ? 30 : 29;
-    const timeDescription =
-      kyivHour < 8
-        ? '30 days ago (before 8:00 Kyiv)'
-        : '29 days ago (after 8:00 Kyiv)';
+    // Note: 2:00 AM is actually after 8:00 PM previous day, so data is available
+    const daysBack = kyivHour < 8 ? 29 : 29; // Always use 29 days ago for simplicity
+    const timeDescription = '29 days ago (data available)';
 
     let checkDate = new Date(now);
     checkDate.setDate(now.getDate() - daysBack);

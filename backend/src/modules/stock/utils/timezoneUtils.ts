@@ -126,7 +126,37 @@ export class TimezoneUtils {
       hour12: false,
     });
 
-    return this.parseTimezoneString(kyivTimeString);
+    // Parse the string to get Kyiv time components
+    const parts = kyivTimeString.split(', ');
+    if (parts.length !== 2) {
+      throw new Error('Invalid timezone conversion');
+    }
+
+    const datePart = parts[0] || '';
+    const timePart = parts[1] || '';
+    const dateComponents = datePart.split('/');
+    const timeComponents = timePart.split(':');
+
+    if (dateComponents.length !== 3 || timeComponents.length !== 3) {
+      throw new Error('Invalid date/time format');
+    }
+
+    const month = dateComponents[0] || '01';
+    const day = dateComponents[1] || '01';
+    const year = dateComponents[2] || '2025';
+    const hour = timeComponents[0] || '00';
+    const minute = timeComponents[1] || '00';
+    const second = timeComponents[2] || '00';
+
+    // Create Date object with Kyiv time components
+    return new Date(
+      parseInt(year),
+      parseInt(month) - 1,
+      parseInt(day),
+      parseInt(hour),
+      parseInt(minute),
+      parseInt(second)
+    );
   }
 
   /**
