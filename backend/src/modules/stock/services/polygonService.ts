@@ -54,12 +54,24 @@ export class PolygonService {
     date: string
   ): Promise<PolygonDailyData | null> {
     try {
+      console.log(`API REQUEST: Fetching ${symbol} data for date: ${date}`);
       const response = await this.rest.getStocksOpenClose(symbol, date);
+      console.log(`API RESPONSE: ${symbol} data received for ${date}:`, {
+        open: response.open,
+        close: response.close,
+        high: response.high,
+        low: response.low,
+        volume: response.volume,
+      });
 
       return response;
     } catch (error: any) {
-      console.error(`Error fetching daily data for ${symbol}:`, error);
+      console.error(
+        `API ERROR: Error fetching ${symbol} data for ${date}:`,
+        error
+      );
       if (error.status === 404) {
+        console.log(`NO DATA: No data found for ${symbol} on ${date}`);
         return null;
       }
       throw error;
@@ -285,37 +297,15 @@ export class PolygonService {
 
   /**
    * Get the most recent trading day date
-   * Enhanced logic: considers update history to avoid duplicates
+   * Always uses dynamic date calculation based on current date
    */
   async getMostRecentTradingDay(): Promise<string> {
-    try {
-      // Check if we have update history in database
-      const lastUpdate = await this.getLastUpdateInfo();
-
-      if (lastUpdate) {
-        console.log(
-          `Last update was: ${lastUpdate.lastUpdateDate} (${lastUpdate.lastUpdateTime})`
-        );
-
-        const lastUpdateDate = new Date(lastUpdate.lastUpdateDate);
-        const today = new Date();
-
-        if (
-          this.isSameDay(lastUpdateDate, today) ||
-          this.isSameDay(lastUpdateDate, this.getYesterday())
-        ) {
-          console.log(
-            'Data already updated for recent dates, looking for next available date...'
-          );
-          return this.getNextAvailableTradingDay(lastUpdateDate);
-        }
-      }
-    } catch (error) {
-      console.log('No update history found, using original logic');
-    }
-
-    // Fallback to original logic if no history
-    return this.getOriginalMostRecentTradingDay();
+    // Always use dynamic date calculation for consistent daily shifting
+    const result = this.getOriginalMostRecentTradingDay();
+    console.log(
+      `Dynamic current date: ${result} (2 days ago, last completed trading day)`
+    );
+    return result;
   }
 
   /**
@@ -391,33 +381,13 @@ export class PolygonService {
 
   /**
    * Get date for monthly comparison (30 days ago, skip weekends)
-   * Enhanced logic: considers update history to avoid duplicates
+   * Always uses dynamic date calculation based on current date
    */
   async getMonthlyComparisonDate(): Promise<string> {
-    try {
-      // Check if we have update history in database
-      const lastUpdate = await this.getLastUpdateInfo();
-
-      if (lastUpdate) {
-        console.log(`Last monthly update was: ${lastUpdate.lastMonthlyDate}`);
-
-        const lastMonthlyDate = new Date(lastUpdate.lastMonthlyDate);
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-        if (lastMonthlyDate >= thirtyDaysAgo) {
-          console.log(
-            'Monthly data already updated recently, looking for next available date...'
-          );
-          return this.getNextAvailableTradingDay(lastMonthlyDate);
-        }
-      }
-    } catch (error) {
-      console.log('No update history found, using original logic');
-    }
-
-    // Fallback to original logic
-    return this.getOriginalMonthlyComparisonDate();
+    // Always use dynamic date calculation for consistent daily shifting
+    const result = this.getOriginalMonthlyComparisonDate();
+    console.log(`Dynamic monthly date: ${result} (30 days ago, weekday)`);
+    return result;
   }
 
   /**
@@ -459,7 +429,6 @@ export class PolygonService {
         totalUpdates: 1,
       };
 
-      console.log(`DEBUG: About to insert updateInfo:`, updateInfo);
 
       if (!this.fastify) {
         console.error('ERROR: fastify not available');

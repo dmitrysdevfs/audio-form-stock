@@ -237,8 +237,12 @@ export class StockService {
           const monthlyDate =
             await this.polygonService.getMonthlyComparisonDate();
 
+          console.log(`FETCHING DATA for ${ticker.ticker}:`);
           console.log(
-            `Fetching data for ${ticker.ticker}: current=${currentDate} (dynamic: 2 days ago, last completed trading day), monthly=${monthlyDate} (dynamic: 30 days ago, weekday)`
+            `   Current date: ${currentDate} (dynamic: 2 days ago, last completed trading day)`
+          );
+          console.log(
+            `   Monthly date: ${monthlyDate} (dynamic: 30 days ago, weekday)`
           );
 
           // Use individual API calls (free plan compatible)
@@ -384,8 +388,6 @@ export class StockService {
         } catch (error) {
           console.error('ERROR: Failed to save update history:', error);
         }
-      } else {
-        console.log('DEBUG: processed <= 0, skipping history save');
       }
 
       return {
