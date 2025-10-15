@@ -7,6 +7,7 @@ import testPolygonOfficialRoutes from './testPolygonOfficial.js';
 import { formRoutes } from '../modules/form/index.js';
 import { stockRoutes } from '../modules/stock/index.js';
 import audioModule from '../modules/audio/index.js';
+// import { debugRoutes } from '../modules/stock/experiments/debugRoutes.js';
 
 const routes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/', async () => {
@@ -22,6 +23,7 @@ const routes: FastifyPluginAsync = async (fastify) => {
   fastify.register(formRoutes, { prefix: '/api/form' });
   fastify.register(stockRoutes);
   fastify.register(audioModule, { prefix: '/api' });
+  // fastify.register(debugRoutes, { prefix: '/debug' });
 };
 
 export default routes;

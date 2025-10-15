@@ -257,6 +257,13 @@ export class PolygonService {
   }
 
   /**
+   * Get current time in different timezones with formatted strings
+   */
+  getCurrentTimesFormatted() {
+    return TimezoneUtils.getCurrentTimesFormatted();
+  }
+
+  /**
    * Check if data should be updated based on market status
    * For free plan: always allow updates to collect available data
    */
@@ -361,16 +368,25 @@ export class PolygonService {
 
   /**
    * Original logic for most recent trading day
+   * Enhanced: uses dynamic date shifting based on current date
    */
   private getOriginalMostRecentTradingDay(): string {
-    let checkDate = new Date();
-    checkDate.setDate(checkDate.getDate() - 2);
+    const now = new Date();
 
+    // Get current date (2 days ago for free plan compatibility)
+    let checkDate = new Date(now);
+    checkDate.setDate(now.getDate() - 2);
+
+    // Skip weekends to find the last trading day
     while (checkDate.getDay() === 0 || checkDate.getDay() === 6) {
       checkDate.setDate(checkDate.getDate() - 1);
     }
 
-    return checkDate.toISOString().split('T')[0] || '';
+    const result = checkDate.toISOString().split('T')[0] || '';
+    console.log(
+      `Dynamic current date: ${result} (2 days ago, last completed trading day)`
+    );
+    return result;
   }
 
   /**
@@ -406,16 +422,23 @@ export class PolygonService {
 
   /**
    * Original logic for monthly comparison date
+   * Enhanced: uses dynamic date shifting based on current date
    */
   private getOriginalMonthlyComparisonDate(): string {
-    let checkDate = new Date();
-    checkDate.setDate(checkDate.getDate() - 30);
+    const now = new Date();
 
+    // Get monthly date (30 days ago)
+    let checkDate = new Date(now);
+    checkDate.setDate(now.getDate() - 30);
+
+    // Skip weekends to find the last trading day
     while (checkDate.getDay() === 0 || checkDate.getDay() === 6) {
       checkDate.setDate(checkDate.getDate() - 1);
     }
 
-    return checkDate.toISOString().split('T')[0] || '';
+    const result = checkDate.toISOString().split('T')[0] || '';
+    console.log(`Dynamic monthly date: ${result} (30 days ago, weekday)`);
+    return result;
   }
 
   /**
@@ -473,16 +496,15 @@ export class PolygonService {
    * Log current timezone information for debugging
    */
   logTimezoneInfo(): void {
-    const times = this.getCurrentTimes();
+    const times = this.getCurrentTimesFormatted();
     const marketStatus = this.getMarketStatus();
     const schedule = this.getOptimalUpdateSchedule();
 
     console.log('=== TIMEZONE INFORMATION ===');
-    console.log(`UTC Time: ${times.utc.toISOString()}`);
-    console.log(
-      `Eastern Time: ${TimezoneUtils.formatEasternTime(times.eastern)}`
-    );
-    console.log(`Kyiv Time: ${TimezoneUtils.formatKyivTime(times.kyiv)}`);
+    console.log(`UTC Time: ${times.utc}`);
+    console.log(`Eastern Time: ${times.eastern}`);
+    console.log(`Kyiv Time: ${times.kyiv}`);
+    console.log(`System Time: ${times.system}`);
     console.log(`Market Status: ${marketStatus.currentSession}`);
     console.log(`Market Open: ${marketStatus.isMarketOpen}`);
     console.log(`Pre-Market: ${marketStatus.isPreMarket}`);

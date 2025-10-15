@@ -77,6 +77,7 @@ export class ScheduleService {
       utc: string;
       eastern: string;
       kyiv: string;
+      system: string;
     };
     market: {
       status: string;
@@ -92,15 +93,16 @@ export class ScheduleService {
       nextUpdate: string;
     };
   } {
-    const times = this.polygonService.getCurrentTimes();
+    const times = this.polygonService.getCurrentTimesFormatted();
     const marketStatus = this.polygonService.getMarketStatus();
     const schedule = this.polygonService.getOptimalUpdateSchedule();
 
     return {
       timezones: {
-        utc: times.utc.toISOString(),
-        eastern: TimezoneUtils.formatEasternTime(times.eastern),
-        kyiv: TimezoneUtils.formatKyivTime(times.kyiv),
+        utc: times.utc,
+        eastern: times.eastern,
+        kyiv: times.kyiv,
+        system: times.system,
       },
       market: {
         status: marketStatus.currentSession,
@@ -283,6 +285,7 @@ export class ScheduleService {
     console.log(`  UTC: ${info.timezones.utc}`);
     console.log(`  Eastern: ${info.timezones.eastern}`);
     console.log(`  Kyiv: ${info.timezones.kyiv}`);
+    console.log(`  System: ${info.timezones.system}`);
 
     console.log('\nMARKET STATUS:');
     console.log(`  Status: ${info.market.status}`);

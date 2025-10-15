@@ -238,7 +238,7 @@ export class StockService {
             await this.polygonService.getMonthlyComparisonDate();
 
           console.log(
-            `Fetching data for ${ticker.ticker}: current=${currentDate} (2 days ago, last completed trading day), monthly=${monthlyDate} (30 days ago, weekday)`
+            `Fetching data for ${ticker.ticker}: current=${currentDate} (dynamic: 2 days ago, last completed trading day), monthly=${monthlyDate} (dynamic: 30 days ago, weekday)`
           );
 
           // Use individual API calls (free plan compatible)

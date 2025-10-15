@@ -41,6 +41,20 @@ export class TimezoneUtils {
   }
 
   /**
+   * Get current time in different timezones with formatted strings
+   */
+  static getCurrentTimesFormatted() {
+    const now = new Date();
+
+    return {
+      utc: now.toISOString(),
+      eastern: this.formatEasternTime(now),
+      kyiv: this.formatKyivTime(now),
+      system: now.toString(),
+    };
+  }
+
+  /**
    * Parse timezone formatted string to Date object
    */
   private static parseTimezoneString(timezoneString: string): Date {
@@ -100,9 +114,19 @@ export class TimezoneUtils {
    * Handles both EET (UTC+2) and EEST (UTC+3) automatically
    */
   static toKyivTime(utcDate: Date): Date {
-    return new Date(
-      utcDate.toLocaleString('en-US', { timeZone: 'Europe/Kiev' })
-    );
+    // Use JavaScript's built-in timezone handling for Kyiv
+    const kyivTimeString = utcDate.toLocaleString('en-US', {
+      timeZone: 'Europe/Kyiv',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+
+    return this.parseTimezoneString(kyivTimeString);
   }
 
   /**
@@ -431,7 +455,7 @@ export class TimezoneUtils {
    */
   static formatKyivTime(date: Date): string {
     return date.toLocaleString('uk-UA', {
-      timeZone: 'Europe/Kiev',
+      timeZone: 'Europe/Kyiv',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
