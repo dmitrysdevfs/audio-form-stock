@@ -239,10 +239,10 @@ export class StockService {
 
           console.log(`FETCHING DATA for ${ticker.ticker}:`);
           console.log(
-            `   Current date: ${currentDate} (dynamic: 2 days ago, last completed trading day)`
+            `   Current date: ${currentDate} (time-based: before/after 8:00 Kyiv)`
           );
           console.log(
-            `   Monthly date: ${monthlyDate} (dynamic: 30 days ago, weekday)`
+            `   Monthly date: ${monthlyDate} (time-based: before/after 8:00 Kyiv)`
           );
 
           // Use individual API calls (free plan compatible)

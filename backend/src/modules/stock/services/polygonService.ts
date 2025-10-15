@@ -358,14 +358,23 @@ export class PolygonService {
 
   /**
    * Original logic for most recent trading day
-   * Enhanced: uses dynamic date shifting based on current date
+   * Enhanced: uses time-based logic (before/after 8:00 Kyiv time)
    */
   private getOriginalMostRecentTradingDay(): string {
     const now = new Date();
+    const kyivTime = TimezoneUtils.toKyivTime(now);
+    const kyivHour = kyivTime.getHours();
 
-    // Get current date (2 days ago for free plan compatibility)
+    // Before 8:00 Kyiv time: use 2 days ago (data not yet available)
+    // After 8:00 Kyiv time: use 1 day ago (yesterday's data available)
+    const daysBack = kyivHour < 8 ? 2 : 1;
+    const timeDescription =
+      kyivHour < 8
+        ? '2 days ago (before 8:00 Kyiv)'
+        : '1 day ago (after 8:00 Kyiv)';
+
     let checkDate = new Date(now);
-    checkDate.setDate(now.getDate() - 2);
+    checkDate.setDate(now.getDate() - daysBack);
 
     // Skip weekends to find the last trading day
     while (checkDate.getDay() === 0 || checkDate.getDay() === 6) {
@@ -373,9 +382,7 @@ export class PolygonService {
     }
 
     const result = checkDate.toISOString().split('T')[0] || '';
-    console.log(
-      `Dynamic current date: ${result} (2 days ago, last completed trading day)`
-    );
+    console.log(`Dynamic current date: ${result} (${timeDescription})`);
     return result;
   }
 
@@ -392,14 +399,23 @@ export class PolygonService {
 
   /**
    * Original logic for monthly comparison date
-   * Enhanced: uses dynamic date shifting based on current date
+   * Enhanced: uses time-based logic (before/after 8:00 Kyiv time)
    */
   private getOriginalMonthlyComparisonDate(): string {
     const now = new Date();
+    const kyivTime = TimezoneUtils.toKyivTime(now);
+    const kyivHour = kyivTime.getHours();
 
-    // Get monthly date (30 days ago)
+    // Before 8:00 Kyiv time: use 30 days ago
+    // After 8:00 Kyiv time: use 29 days ago (shifted with current date)
+    const daysBack = kyivHour < 8 ? 30 : 29;
+    const timeDescription =
+      kyivHour < 8
+        ? '30 days ago (before 8:00 Kyiv)'
+        : '29 days ago (after 8:00 Kyiv)';
+
     let checkDate = new Date(now);
-    checkDate.setDate(now.getDate() - 30);
+    checkDate.setDate(now.getDate() - daysBack);
 
     // Skip weekends to find the last trading day
     while (checkDate.getDay() === 0 || checkDate.getDay() === 6) {
@@ -407,7 +423,7 @@ export class PolygonService {
     }
 
     const result = checkDate.toISOString().split('T')[0] || '';
-    console.log(`Dynamic monthly date: ${result} (30 days ago, weekday)`);
+    console.log(`Dynamic monthly date: ${result} (${timeDescription})`);
     return result;
   }
 
@@ -428,7 +444,6 @@ export class PolygonService {
         lastUpdateTime: new Date(),
         totalUpdates: 1,
       };
-
 
       if (!this.fastify) {
         console.error('ERROR: fastify not available');
