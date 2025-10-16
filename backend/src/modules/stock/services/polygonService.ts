@@ -169,10 +169,12 @@ export class PolygonService {
   convertToStockData(
     ticker: PolygonTickerDetails,
     dailyData?: PolygonDailyData,
-    monthlyData?: PolygonDailyData
+    monthlyData?: PolygonDailyData,
+    previousDayData?: PolygonDailyData
   ): StockData {
     const price = dailyData?.close || 0;
-    const previousClose = dailyData?.open || 0;
+    // Use previous day's close price instead of current day's open
+    const previousClose = previousDayData?.close || 0;
     const changes = price - previousClose;
     const changesPercentage =
       previousClose > 0 ? (changes / previousClose) * 100 : 0;
@@ -357,19 +359,53 @@ export class PolygonService {
   }
 
   /**
-   * Original logic for most recent trading day
-   * Enhanced: uses time-based logic (before/after 8:00 Kyiv time)
+   * Get previous trading day (for price change calculation)
+   * This is the day before the current trading day
    */
-  private getOriginalMostRecentTradingDay(): string {
+  getPreviousTradingDay(): string {
     const now = new Date();
-    
+
     // Get Kyiv time directly using toLocaleString
     const kyivTimeString = now.toLocaleString('en-US', {
       timeZone: 'Europe/Kyiv',
       hour: '2-digit',
       hour12: false,
     });
-    
+
+    const kyivHour = parseInt(kyivTimeString.split(':')[0] || '0');
+
+    // Before 8:00 Kyiv time: use 3 days ago (2 days before current)
+    // After 8:00 Kyiv time: use 2 days ago (1 day before current)
+    const daysBack = kyivHour < 8 ? 2 : 2; // Always use 2 days ago for simplicity
+    const timeDescription = '2 days ago (previous trading day)';
+
+    let checkDate = new Date(now);
+    checkDate.setDate(now.getDate() - daysBack);
+
+    // Skip weekends to find the last trading day
+    while (checkDate.getDay() === 0 || checkDate.getDay() === 6) {
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    const result = checkDate.toISOString().split('T')[0] || '';
+    console.log(`Previous trading day: ${result} (${timeDescription})`);
+    return result;
+  }
+
+  /**
+   * Original logic for most recent trading day
+   * Enhanced: uses time-based logic (before/after 8:00 Kyiv time)
+   */
+  private getOriginalMostRecentTradingDay(): string {
+    const now = new Date();
+
+    // Get Kyiv time directly using toLocaleString
+    const kyivTimeString = now.toLocaleString('en-US', {
+      timeZone: 'Europe/Kyiv',
+      hour: '2-digit',
+      hour12: false,
+    });
+
     const kyivHour = parseInt(kyivTimeString.split(':')[0] || '0');
 
     // Before 8:00 Kyiv time: use 2 days ago (data not yet available)
@@ -408,14 +444,14 @@ export class PolygonService {
    */
   private getOriginalMonthlyComparisonDate(): string {
     const now = new Date();
-    
+
     // Get Kyiv time directly using toLocaleString
     const kyivTimeString = now.toLocaleString('en-US', {
       timeZone: 'Europe/Kyiv',
       hour: '2-digit',
       hour12: false,
     });
-    
+
     const kyivHour = parseInt(kyivTimeString.split(':')[0] || '0');
 
     // Before 8:00 Kyiv time: use 30 days ago

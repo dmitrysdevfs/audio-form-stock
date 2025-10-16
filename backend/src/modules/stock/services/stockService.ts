@@ -231,15 +231,19 @@ export class StockService {
             `Processing ${ticker.ticker} (${i + 1}/${polygonTickers.length})`
           );
 
-          // Get current and monthly data using optimal dates based on market status
+          // Get current, previous, and monthly data using optimal dates based on market status
           const currentDate =
             await this.polygonService.getMostRecentTradingDay();
+          const previousDate = this.polygonService.getPreviousTradingDay();
           const monthlyDate =
             await this.polygonService.getMonthlyComparisonDate();
 
           console.log(`FETCHING DATA for ${ticker.ticker}:`);
           console.log(
             `   Current date: ${currentDate} (time-based: before/after 8:00 Kyiv)`
+          );
+          console.log(
+            `   Previous date: ${previousDate} (for price change calculation)`
           );
           console.log(
             `   Monthly date: ${monthlyDate} (time-based: before/after 8:00 Kyiv)`
@@ -249,6 +253,14 @@ export class StockService {
           const currentData = await this.polygonService.getDailyData(
             ticker.ticker,
             currentDate
+          );
+
+          // Wait 30 seconds between requests (free plan rate limit)
+          await this.delay(30000);
+
+          const previousData = await this.polygonService.getDailyData(
+            ticker.ticker,
+            previousDate
           );
 
           // Wait 30 seconds between requests (free plan rate limit)
@@ -282,8 +294,9 @@ export class StockService {
 
           const stockData = this.polygonService.convertToStockData(
             ticker,
-            currentTickerData as any, // Contains open and close for daily changes
-            { close: monthlyClosePrice } as any // Monthly close price
+            currentTickerData as any, // Current day data
+            { close: monthlyClosePrice } as any, // Monthly close price
+            previousData as any // Previous day data for price change calculation
           );
 
           await this.upsertStock(stockData);
