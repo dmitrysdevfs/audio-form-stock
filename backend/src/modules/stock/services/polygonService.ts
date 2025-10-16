@@ -454,11 +454,14 @@ export class PolygonService {
 
     const kyivHour = parseInt(kyivTimeString.split(':')[0] || '0');
 
-    // Before 8:00 Kyiv time: use 30 days ago
-    // After 8:00 Kyiv time: use 29 days ago (shifted with current date)
+    // Before 8:00 Kyiv time: use 31 days ago (to maintain 30-day period with 2-day delay)
+    // After 8:00 Kyiv time: use 30 days ago (to maintain 30-day period with 1-day delay)
     // Note: 2:00 AM is actually after 8:00 PM previous day, so data is available
-    const daysBack = kyivHour < 8 ? 29 : 29; // Always use 29 days ago for simplicity
-    const timeDescription = '29 days ago (data available)';
+    const daysBack = kyivHour < 8 ? 31 : 30;
+    const timeDescription =
+      kyivHour < 8
+        ? '31 days ago (30-day period with 2-day delay)'
+        : '30 days ago (30-day period with 1-day delay)';
 
     let checkDate = new Date(now);
     checkDate.setDate(now.getDate() - daysBack);
