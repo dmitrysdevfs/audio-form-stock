@@ -7,6 +7,13 @@ import {
   BatchUpdateInfo,
 } from '../types';
 import { PolygonService } from './polygonService.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'url';
+
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Stock service for database operations
@@ -192,6 +199,21 @@ export class StockService {
 
       // Get target symbols for this batch
       const targetSymbols = await this.getTargetSymbols();
+
+      // Check if we have any symbols to process
+      if (targetSymbols.length === 0) {
+        console.error(
+          'No symbols available - both main and fallback files may be missing'
+        );
+        return {
+          success: false,
+          message: 'No symbols available - check symbol files',
+          processed: 0,
+          totalBatches,
+          errors: ['No symbols available - check symbol files'],
+        };
+      }
+
       const batchSymbols = targetSymbols.slice(
         batchInfo.startIndex,
         batchInfo.endIndex
@@ -612,236 +634,69 @@ export class StockService {
   }
 
   private async getTargetSymbols(): Promise<string[]> {
-    const nasdaq100 = [
-      'AAPL',
-      'MSFT',
-      'GOOGL',
-      'AMZN',
-      'TSLA',
-      'META',
-      'NVDA',
-      'NFLX',
-      'ADBE',
-      'CRM',
-      'PYPL',
-      'INTC',
-      'CMCSA',
-      'PEP',
-      'COST',
-      'TMUS',
-      'AVGO',
-      'TXN',
-      'QCOM',
-      'CHTR',
-      'SBUX',
-      'INTU',
-      'ISRG',
-      'GILD',
-      'MDLZ',
-      'BKNG',
-      'ADP',
-      'VRTX',
-      'REGN',
-      'CSX',
-      'AMAT',
-      'AMD',
-      'ATVI',
-      'ADSK',
-      'ILMN',
-      'LRCX',
-      'MU',
-      'AMGN',
-      'BIIB',
-      'FISV',
-      'CTAS',
-      'KLAC',
-      'SNPS',
-      'MCHP',
-      'CDNS',
-      'CTSH',
-      'WBA',
-      'EXC',
-      'AEP',
-      'SO',
-      'DUK',
-      'D',
-      'EXPE',
-      'PAYX',
-      'ORLY',
-      'ROST',
-      'DXCM',
-      'IDXX',
-      'SIRI',
-      'CHKP',
-      'VRSN',
-      'NTES',
-      'MRNA',
-      'BIDU',
-      'ALGN',
-      'CPRT',
-      'FAST',
-      'VRSK',
-      'ANSS',
-      'CTXS',
-      'WLTW',
-      'XEL',
-      'ILMN',
-      'MELI',
-      'TEAM',
-      'ZM',
-      'DOCU',
-      'CRWD',
-      'OKTA',
-      'SNOW',
-      'PLTR',
-      'ROKU',
-      'PTON',
-      'ZOOM',
-      'SQ',
-      'SHOP',
-      'TWLO',
-      'SPOT',
-      'UBER',
-      'LYFT',
-    ];
+    try {
+      // Load symbols from JSON file
+      const symbolsPath = path.join(
+        __dirname,
+        '..',
+        '..',
+        '..',
+        '..',
+        'src',
+        'modules',
+        'stock',
+        'data',
+        'stock-symbols.json'
+      );
 
-    const sp500Top200 = [
-      'JNJ',
-      'JPM',
-      'V',
-      'PG',
-      'UNH',
-      'HD',
-      'MA',
-      'DIS',
-      'BAC',
-      'XOM',
-      'T',
-      'PFE',
-      'ABT',
-      'VZ',
-      'KO',
-      'MRK',
-      'TMO',
-      'WMT',
-      'ABBV',
-      'ACN',
-      'NKE',
-      'CVX',
-      'DHR',
-      'TXN',
-      'NEE',
-      'LLY',
-      'UNP',
-      'PM',
-      'HON',
-      'IBM',
-      'SPGI',
-      'RTX',
-      'LOW',
-      'TGT',
-      'ISRG',
-      'GILD',
-      'MDLZ',
-      'BKNG',
-      'ADP',
-      'VRTX',
-      'REGN',
-      'CSX',
-      'AMAT',
-      'AMD',
-      'ATVI',
-      'ADSK',
-      'ILMN',
-      'LRCX',
-      'MU',
-      'BIIB',
-      'FISV',
-      'CTAS',
-      'KLAC',
-      'SNPS',
-      'MCHP',
-      'CDNS',
-      'CTSH',
-      'WBA',
-      'EXC',
-      'AEP',
-      'SO',
-      'DUK',
-      'D',
-      'EXPE',
-      'PAYX',
-      'ORLY',
-      'ROST',
-      'DXCM',
-      'IDXX',
-      'SIRI',
-      'CHKP',
-      'VRSN',
-      'NTES',
-      'MRNA',
-      'BIDU',
-      'ALGN',
-      'CPRT',
-      'FAST',
-      'VRSK',
-      'ANSS',
-      'CTXS',
-      'WLTW',
-      'XEL',
-      'MELI',
-      'TEAM',
-      'ZM',
-      'DOCU',
-      'CRWD',
-      'OKTA',
-      'SNOW',
-      'PLTR',
-      'ROKU',
-      'PTON',
-      'ZOOM',
-      'SQ',
-      'SHOP',
-      'TWLO',
-      'SPOT',
-      'UBER',
-      'LYFT',
-    ];
+      console.log('DEBUG: Loading symbols from path:', symbolsPath);
+      console.log('DEBUG: __dirname:', __dirname);
+      console.log('DEBUG: File exists:', fs.existsSync(symbolsPath));
 
-    const dowJones30 = [
-      'AAPL',
-      'MSFT',
-      'UNH',
-      'JNJ',
-      'V',
-      'JPM',
-      'PG',
-      'HD',
-      'MA',
-      'DIS',
-      'BAC',
-      'XOM',
-      'T',
-      'PFE',
-      'ABT',
-      'VZ',
-      'KO',
-      'MRK',
-      'TMO',
-      'WMT',
-      'ABBV',
-      'ACN',
-      'NKE',
-      'CVX',
-      'DHR',
-      'ADBE',
-    ];
+      const symbolsData = JSON.parse(fs.readFileSync(symbolsPath, 'utf8'));
 
-    // Combine and deduplicate
-    const allSymbols = [
-      ...new Set([...nasdaq100, ...sp500Top200, ...dowJones30]),
-    ];
-    return allSymbols.slice(0, 330); // Limit to 330 companies
+      // Use static 330 list for better coverage
+      return symbolsData.static330.symbols;
+    } catch (error) {
+      console.error('Error loading stock symbols from JSON:', error);
+
+      try {
+        // Try to load fallback symbols from JSON file
+        const fallbackPath = path.join(
+          __dirname,
+          '..',
+          '..',
+          '..',
+          '..',
+          'src',
+          'modules',
+          'stock',
+          'data',
+          'fallback-symbols.json'
+        );
+
+        console.log('DEBUG: Loading fallback symbols from path:', fallbackPath);
+        console.log(
+          'DEBUG: Fallback file exists:',
+          fs.existsSync(fallbackPath)
+        );
+
+        const fallbackData = JSON.parse(fs.readFileSync(fallbackPath, 'utf8'));
+
+        console.log('Using fallback symbols from JSON file');
+        return fallbackData.symbols;
+      } catch (fallbackError) {
+        console.error(
+          'Error loading fallback symbols from JSON:',
+          fallbackError
+        );
+
+        // If both main and fallback files fail, return empty array
+        // This will cause the service to log an error but not crash
+        console.error('Both main and fallback symbol files are unavailable');
+        return [];
+      }
+    }
   }
 
   /**

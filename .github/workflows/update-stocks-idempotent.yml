@@ -2,8 +2,8 @@ name: Daily Stock Update (Idempotent)
 
 on:
   schedule:
-    # Run at 6:00 PM EST every day (after market close)
-    - cron: '0 23 * * *'
+    # Run at 7:30 AM Kyiv time, Tuesday to Saturday (market days)
+    - cron: '30 5 * * 2-6'
   workflow_dispatch:
 
 jobs:
