@@ -636,12 +636,8 @@ export class StockService {
   private async getTargetSymbols(): Promise<string[]> {
     try {
       // Load symbols from JSON file
-      const symbolsPath = path.join(
-        __dirname,
-        '..',
-        '..',
-        '..',
-        '..',
+      const symbolsPath = path.resolve(
+        process.cwd(),
         'src',
         'modules',
         'stock',
@@ -651,6 +647,7 @@ export class StockService {
 
       console.log('DEBUG: Loading symbols from path:', symbolsPath);
       console.log('DEBUG: __dirname:', __dirname);
+      console.log('DEBUG: process.cwd():', process.cwd());
       console.log('DEBUG: File exists:', fs.existsSync(symbolsPath));
 
       const symbolsData = JSON.parse(fs.readFileSync(symbolsPath, 'utf8'));
@@ -662,12 +659,8 @@ export class StockService {
 
       try {
         // Try to load fallback symbols from JSON file
-        const fallbackPath = path.join(
-          __dirname,
-          '..',
-          '..',
-          '..',
-          '..',
+        const fallbackPath = path.resolve(
+          process.cwd(),
           'src',
           'modules',
           'stock',
