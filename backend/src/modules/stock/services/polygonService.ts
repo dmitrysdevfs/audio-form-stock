@@ -299,13 +299,12 @@ export class PolygonService {
 
   /**
    * Get the most recent trading day date
-   * Always uses dynamic date calculation based on current date
+   * Always uses 1 day ago (since we always update after 8:00 AM Kyiv)
    */
   async getMostRecentTradingDay(): Promise<string> {
-    // Always use dynamic date calculation for consistent daily shifting
     const result = this.getOriginalMostRecentTradingDay();
     console.log(
-      `Dynamic current date: ${result} (2 days ago, last completed trading day)`
+      `Dynamic current date: ${result} (1 day ago, last completed trading day)`
     );
     return result;
   }
@@ -367,41 +366,9 @@ export class PolygonService {
     const currentTradingDay = this.getOriginalMostRecentTradingDay();
     const currentTradingDate = new Date(currentTradingDay);
 
-    // Simple 1-day back calculation - let Polygon.io handle trading day filtering
+    // Go back 1 day and skip weekends
     let checkDate = new Date(currentTradingDate);
     checkDate.setDate(currentTradingDate.getDate() - 1);
-
-    const result = checkDate.toISOString().split('T')[0] || '';
-    console.log(
-      `Previous trading day: ${result} (1 day before current trading day)`
-    );
-    return result;
-  }
-
-  /**
-   * Original logic for most recent trading day
-   * Enhanced: uses time-based logic (before/after 8:00 Kyiv time)
-   */
-  private getOriginalMostRecentTradingDay(): string {
-    const now = new Date();
-
-    // Get Kyiv time directly using toLocaleString
-    const kyivTimeString = now.toLocaleString('en-US', {
-      timeZone: 'Europe/Kyiv',
-      hour: '2-digit',
-      hour12: false,
-    });
-
-    const kyivHour = parseInt(kyivTimeString.split(':')[0] || '0');
-
-    // Before 8:00 Kyiv time: use 2 days ago (data not yet available)
-    // After 8:00 Kyiv time: use 1 day ago (yesterday's data available)
-    // Note: 2:00 AM is actually after 8:00 PM previous day, so data is available
-    const daysBack = kyivHour < 8 ? 1 : 1; // Always use 1 day ago for simplicity
-    const timeDescription = '1 day ago (data available)';
-
-    let checkDate = new Date(now);
-    checkDate.setDate(now.getDate() - daysBack);
 
     // Skip weekends to find the last trading day
     while (checkDate.getDay() === 0 || checkDate.getDay() === 6) {
@@ -409,18 +376,44 @@ export class PolygonService {
     }
 
     const result = checkDate.toISOString().split('T')[0] || '';
-    console.log(`Dynamic current date: ${result} (${timeDescription})`);
+    console.log(
+      `Previous trading day: ${result} (1 day before current trading day, skipping weekends)`
+    );
+    return result;
+  }
+
+  /**
+   * Simplified logic for most recent trading day
+   * Uses time-based logic (before/after 8:00 Kyiv time)
+   */
+  private getOriginalMostRecentTradingDay(): string {
+    const now = new Date();
+
+    // Always use 1 day ago, but skip weekends
+    let checkDate = new Date(now);
+    checkDate.setDate(now.getDate() - 1);
+
+    // Skip weekends to find the last trading day
+    while (checkDate.getDay() === 0 || checkDate.getDay() === 6) {
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    const result = checkDate.toISOString().split('T')[0] || '';
+    console.log(
+      `Dynamic current date: ${result} (1 day ago, skipping weekends)`
+    );
     return result;
   }
 
   /**
    * Get date for monthly comparison (30 days ago, skip weekends)
-   * Always uses dynamic date calculation based on current date
+   * Always uses 30 days ago since we always update after 8:00 AM Kyiv
    */
   async getMonthlyComparisonDate(): Promise<string> {
-    // Always use dynamic date calculation for consistent daily shifting
     const result = this.getOriginalMonthlyComparisonDate();
-    console.log(`Dynamic monthly date: ${result} (30 days ago, weekday)`);
+    console.log(
+      `Dynamic monthly date: ${result} (30 days ago, skipping weekends)`
+    );
     return result;
   }
 
@@ -431,26 +424,18 @@ export class PolygonService {
   private getOriginalMonthlyComparisonDate(): string {
     const now = new Date();
 
-    // Get Kyiv time directly using toLocaleString
-    const kyivTimeString = now.toLocaleString('en-US', {
-      timeZone: 'Europe/Kyiv',
-      hour: '2-digit',
-      hour12: false,
-    });
+    // Use 30 days ago, but skip weekends
+    let checkDate = new Date(now);
+    checkDate.setDate(now.getDate() - 31);
 
-    const kyivHour = parseInt(kyivTimeString.split(':')[0] || '0');
-
-    // Use the current trading day as base
-    const currentTradingDay = this.getOriginalMostRecentTradingDay();
-    const currentTradingDate = new Date(currentTradingDay);
-
-    // Simple 30-day back calculation - let Polygon.io handle trading day filtering
-    let checkDate = new Date(currentTradingDate);
-    checkDate.setDate(currentTradingDate.getDate() - 30);
+    // Skip weekends to find the last trading day
+    while (checkDate.getDay() === 0 || checkDate.getDay() === 6) {
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
 
     const result = checkDate.toISOString().split('T')[0] || '';
     console.log(
-      `Dynamic monthly date: ${result} (30 days ago, Polygon.io will filter trading days)`
+      `Dynamic monthly date: ${result} (30 days ago, skipping weekends)`
     );
     return result;
   }
